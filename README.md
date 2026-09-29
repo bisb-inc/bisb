@@ -11,6 +11,7 @@ O projeto está na etapa de organização inicial. A aplicação ainda não foi 
 - Coletar publicações do X ou utilizar dados mockados quando necessário.
 - Normalizar e persistir os acontecimentos.
 - Exibir uma timeline comparativa, com filtros desejáveis por empresa, fonte e período.
+- Preencher manualmente o perfil básico das empresas: mercado, produtos e público-alvo.
 
 ## Estrutura
 
@@ -28,6 +29,7 @@ O projeto está na etapa de organização inicial. A aplicação ainda não foi 
 ├── docs/
 │   └── arquitetura.md
 ├── prompts/
+│   ├── architecture.md
 │   ├── context-generation.md
 │   └── implementation.md
 ├── competitive_monitor_mvp.md
@@ -36,14 +38,14 @@ O projeto está na etapa de organização inicial. A aplicação ainda não foi 
 
 ## Documentação
 
-- [Proposta original e roadmap](competitive_monitor_mvp.md)
+- [Proposta original](competitive_monitor_mvp.md)
 - [Arquitetura inicial](docs/arquitetura.md)
 - [Contexto de arquitetura para IA](.ai/architecture.md)
 - [Regras de negócio](.ai/business-rules.md)
 - [Padrões de desenvolvimento](.ai/standards.md)
 - [Definição da stack](.ai/tech-stack.md)
 - [Backend](backend/README.md) e [frontend](frontend/README.md)
-- Prompts de [geração de contexto](prompts/context-generation.md) e [implementação](prompts/implementation.md)
+- Prompts de [arquitetura](prompts/architecture.md), [geração de contexto](prompts/context-generation.md) e [implementação](prompts/implementation.md)
 
 ## Próximos passos
 

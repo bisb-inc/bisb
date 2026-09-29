@@ -5,7 +5,7 @@ Diretório reservado à interface do Competitive Monitor. A stack ainda será de
 Fluxo previsto:
 
 1. Listar e criar análises.
-2. Cadastrar empresa-alvo e concorrentes.
+2. Cadastrar empresa-alvo e concorrentes e preencher o perfil básico de cada empresa.
 3. Executar a coleta.
 4. Visualizar acontecimentos na timeline comparativa.
 5. Aplicar filtros por empresa, fonte e período.

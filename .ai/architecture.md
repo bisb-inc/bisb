@@ -2,10 +2,10 @@
 
 A arquitetura proposta é composta por frontend, backend REST, banco de dados e providers de fontes externas.
 
-- **Frontend:** criação de análises, cadastro de empresas e concorrentes, acionamento da coleta e apresentação da timeline.
+- **Frontend:** criação de análises, cadastro de empresas, concorrentes e perfil, acionamento da coleta e apresentação da timeline.
 - **Backend:** regras de negócio, endpoints REST, persistência e orquestração da coleta.
 - **Providers:** busca por empresa em GNews ou equivalente e no X, com alternativa mock para o X.
-- **Persistência:** entidades `Analysis`, `Company`, `AnalysisCompany` e `Event`.
+- **Persistência:** entidades `Analysis`, `Company` (com o perfil básico e o termo de busca), `AnalysisCompany` e `Event`.
 
 O papel `TARGET` ou `COMPETITOR` pertence ao vínculo `AnalysisCompany`, conforme o modelo de dados da seção 7 da proposta. Assim, o papel da empresa depende da análise.
 

@@ -181,7 +181,7 @@ Filtros desejáveis:
 As funcionalidades abaixo representam a evolução natural do produto, mas **não precisam ser implementadas na primeira versão**:
 
 - Crawling completo do site da empresa;
-- Geração automática do perfil da empresa;
+- Geração automática do perfil da empresa (no MVP, o perfil básico é preenchido manualmente);
 - Descoberta automática de concorrentes;
 - Deduplicação inteligente de empresas;
 - Classificação de concorrentes como:
@@ -886,7 +886,7 @@ Fluxo da demonstração:
 7. Mostrar timeline consolidada;
 8. Filtrar por concorrente;
 9. Explicar rapidamente a arquitetura;
-10. Apresentar roadmap.
+10. Apresentar a evolução futura.
 
 ---
 
@@ -898,20 +898,6 @@ O MVP deverá provar o seguinte conceito:
 
 > **É possível acompanhar uma empresa e seus concorrentes em uma única interface, consolidando acontecimentos recentes provenientes de diferentes fontes públicas.**
 
-A partir dessa base, a arquitetura poderá evoluir gradualmente para:
-
-```text
-Monitoramento
-      ↓
-Perfil automático
-      ↓
-Descoberta de concorrentes
-      ↓
-Classificação por IA
-      ↓
-Análise competitiva
-      ↓
-Alertas e monitoramento contínuo
-```
+A partir dessa base, a arquitetura poderá evoluir para perfil automático, descoberta de concorrentes, análise com IA e monitoramento contínuo.
 
 Esse recorte permite entregar um sistema pequeno e funcional, ao mesmo tempo em que apresenta uma visão clara de evolução para um produto mais completo.

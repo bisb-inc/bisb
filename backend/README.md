@@ -4,7 +4,7 @@ Diretório reservado à API REST do Competitive Monitor. A linguagem, o framewor
 
 Responsabilidades previstas:
 
-- Gerenciar análises, empresas e seus vínculos.
+- Gerenciar análises, empresas (com perfil básico) e seus vínculos.
 - Persistir `Analysis`, `Company`, `AnalysisCompany` e `Event`.
 - Orquestrar a coleta por empresa.
 - Integrar providers de notícias e X/mock.
