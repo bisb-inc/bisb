@@ -145,8 +145,10 @@ Os entregáveis são acompanhados durante o desenvolvimento; esta lista não mar
 - Período padrão da coleta; 7 dias permanece uma proposta.
 - Escolha definitiva do provider real de notícias.
 - Viabilidade do X Provider real.
-- Contratos e validações ainda abertos.
+- Detalhes finais de contratos HTTP e validações que ainda não tenham sido definidos pela arquitetura e pelos arquivos .ai/.
 - Cenário final da demonstração.
+
+A escolha ou viabilidade dos providers reais não bloqueia o MVP: os providers mockados devem permitir a execução local e a demonstração do fluxo completo sem credenciais externas.
 
 ## Próximos passos
 
