@@ -1,14 +1,104 @@
-# Contexto de arquitetura
+# Contexto de arquitetura — MVP funcional
 
-A arquitetura proposta é composta por frontend, backend REST, banco de dados e providers de fontes externas.
+Revisão documental de 29/09/2026. Fonte principal: [arquitetura oficial da Aula 1](../docs/arquitetura.md); referência estratégica: [discovery e roadmap](../competitive_monitor_mvp.md). A inspeção do repositório determina o estado de implementação, não redefine o escopo.
 
-- **Frontend:** criação de análises, cadastro de empresas, concorrentes e perfil, acionamento da coleta e apresentação da timeline.
-- **Backend:** regras de negócio, endpoints REST, persistência e orquestração da coleta.
-- **Providers:** busca por empresa em GNews ou equivalente e no X, com alternativa mock para o X.
-- **Persistência:** entidades `Analysis`, `Company` (com o perfil básico e o termo de busca), `AnalysisCompany` e `Event`.
+## Produto e hipótese
 
-O papel `TARGET` ou `COMPETITOR` pertence ao vínculo `AnalysisCompany`, conforme o modelo de dados da seção 7 da proposta. Assim, o papel da empresa depende da análise.
+O Competitive Monitor acompanha uma empresa-alvo e seus concorrentes em uma timeline única de notícias e publicações do X/Twitter.
 
-A coleta é acionada pelo usuário. Agendamento contínuo, descoberta automática de concorrentes e classificação por IA pertencem a versões futuras.
+Hipótese a validar: “Dada uma empresa-alvo e uma lista de concorrentes definida pelo analista, é possível coletar acontecimentos de diferentes fontes, normalizá-los, persistir os resultados e apresentá-los em uma timeline comparativa.”
 
-Consulte [docs/arquitetura.md](../docs/arquitetura.md) para os diagramas, o modelo inicial e os endpoints propostos. A stack está pendente em [tech-stack.md](tech-stack.md).
+A solução permanece deliberadamente pequena. O único perfil funcional é Analista; não há autenticação, autorização ou entidade de usuário.
+
+## Componentes e responsabilidades planejadas
+
+O MVP é um **monólito modular FastAPI**, com Web UI e REST API como duas interfaces para os mesmos serviços. Não há aplicação frontend independente.
+
+| Componente | Responsabilidade no MVP |
+| --- | --- |
+| Web UI | Renderizada pelo FastAPI com Jinja2 e HTML5, estilizada com Tailwind CSS e interativa com HTMX; JavaScript vanilla apenas quando necessário |
+| Web Routes | Receber navegação, formulários e requisições HTMX; chamar diretamente os serviços e retornar páginas completas ou fragmentos HTML |
+| REST API Routes | Preservar os endpoints REST oficiais e retornar contratos HTTP/API, utilizando a mesma camada de serviços |
+| Application / Services | Concentrar a coordenação das regras de negócio, coleta e persistência, compartilhada por Web Routes e API Routes |
+| PostgreSQL | Persistir Analysis, Company, AnalysisCompany e Event |
+| Source Providers | Consultar notícias/X ou gerar dados mockados, retornando resultados normalizados para o domínio |
+
+Web Routes e REST API Routes chamam diretamente Application / Services. **Web Routes/Jinja2 não devem chamar a própria REST API via HTTP interno apenas para reutilizar lógica.** Os serviços coordenam banco e providers; contratos externos ficam isolados nos providers. Diagramas e endpoints oficiais estão em [docs/arquitetura.md](../docs/arquitetura.md).
+
+A interface planejada possui abas Monitoramento e Perfil da empresa para criar/consultar análises, manter concorrentes, editar perfil manual e `search_term`, executar coleta e consultar timeline com filtros. Deve identificar visualmente eventos mockados e preservar navegação por teclado, foco visível, responsividade e estados de carregamento, vazio e erro.
+
+## Fluxo funcional completo
+
+1. O analista cria uma análise com exatamente uma empresa-alvo.
+2. Informa concorrentes manualmente, na criação ou depois. A demonstração completa exige ao menos um concorrente.
+3. Opcionalmente preenche perfil básico e `search_term`; sem termo informado, a coleta usa o nome da empresa.
+4. Aciona a coleta das empresas vinculadas à análise.
+5. O backend consulta providers de notícias e X, reais ou mockados.
+6. Os providers normalizam os resultados para o domínio; o backend persiste `Event`, identifica mocks e evita duplicações básicas.
+7. Se uma fonte falhar, preserva os resultados das demais e informa o status por fonte.
+8. O analista consulta a timeline da análise e filtra por empresa, fonte e período.
+
+O perfil manual não bloqueia a coleta. Integrações reais não são obrigatórias: providers mockados compatíveis devem permitir execução local e demonstração quando credenciais, custo ou disponibilidade impedirem o acesso externo.
+
+### Fluxo da Web UI com Jinja2 e HTMX
+
+Browser → Web Route → Application / Service → banco/providers → Web Route → página ou fragmento Jinja2 retornado ao Browser.
+
+HTMX é utilizado desde o início para executar coleta, aplicar filtros, adicionar/remover concorrentes e atualizar partes relevantes da interface quando isso simplificar a experiência. As requisições chegam a Web Routes dedicadas a respostas HTML completas ou parciais. A renderização permanece no servidor; a aplicação não se torna uma SPA.
+
+Clientes REST acessam as API Routes oficiais, que reutilizam os mesmos serviços e retornam contratos de API em vez de HTML.
+
+## Critério de aceite do MVP
+
+O MVP funcional é considerado concluído quando o Analista consegue:
+
+1. Criar uma análise.
+2. Informar exatamente uma empresa `TARGET`.
+3. Ter ao menos um `COMPETITOR` para validar o fluxo competitivo.
+4. Executar uma coleta usando providers reais ou mockados.
+5. Normalizar e persistir os eventos por meio do sistema.
+6. Consultar a timeline da análise.
+
+O perfil manual e `search_term` são opcionais e não bloqueiam esse fluxo. Quando o termo de busca não é informado, utiliza-se o nome da empresa.
+
+## Domínio e API
+
+Preservar as quatro entidades e seus relacionamentos: `Analysis` reúne empresas por `AnalysisCompany`; `Company` pode participar de várias análises e possuir vários `Event`. O papel `TARGET` ou `COMPETITOR` pertence a `AnalysisCompany.role`.
+
+A API planejada cobre criação/listagem/consulta de análises, adição/remoção de concorrentes, edição de empresa/perfil, coleta e consulta dos eventos. Usar a tabela oficial de endpoints, sem criar contratos paralelos neste contexto. Regras consolidadas: [business-rules.md](business-rules.md).
+
+## Já implementado — evidências no repositório
+
+- [app/main.py](../backend/app/main.py): aplicação FastAPI, `create_app`, engine no ciclo de vida e liberação ao encerrar.
+- [config.py](../backend/app/core/config.py): configuração tipada por ambiente e arquivo local.
+- [session.py](../backend/app/db/session.py): engine SQLAlchemy síncrono, sessões por requisição e limites de conexão/consulta/pool.
+- [health.py](../backend/app/api/routes/health.py): `GET /health` sem banco e `GET /health/ready` com `SELECT 1`, respostas 200/503; OpenAPI e Swagger pela aplicação.
+- [base.py](../backend/app/db/base.py) e [ambiente Alembic](../backend/migrations/env.py): infraestrutura ORM/migrações, sem modelos de negócio ou revisões em `migrations/versions/`.
+- [Compose](../backend/compose.yaml): PostgreSQL local com volume persistente e health check; API executada localmente.
+- Dependências e ferramentas de testes/lint configuradas; testes da base presentes, sem nova execução nesta revisão.
+
+## Planejado para o MVP — ainda não implementado
+
+- Web UI integrada com Jinja2, HTML5, Tailwind CSS e HTMX; JavaScript vanilla apenas quando necessário.
+- As quatro entidades de negócio e suas migrações.
+- Application / Services compartilhados, Web Routes e endpoints REST de negócio.
+- Providers reais/mockados, coleta, deduplicação e persistência de eventos.
+- Timeline com filtros e demais fluxos da interface.
+
+O diretório frontend contém documentação, sem aplicação web. Sua existência não implica uma aplicação independente: a Web UI planejada será servida pelo próprio FastAPI e ainda não está implementada.
+
+A base existente deve ser preservada e ampliada. A prontidão do banco não significa que as tabelas de negócio ou o fluxo competitivo existam.
+
+## Fora do MVP e roadmap
+
+Mapa Competitivo, crawling completo, perfil automático, descoberta/classificação de concorrentes, análise/enriquecimento por IA, alertas, workers, filas e processamento contínuo ficam fora. Autenticação e autorização também estão excluídas; não são dependências do MVP.
+
+SPA, React, Vue, Next.js e aplicação frontend independente não fazem parte da arquitetura adotada.
+
+A visão estratégica reserva V2 para enriquecimento automático do perfil, V3 para descoberta/classificação, V4 para IA e V5 para monitoramento contínuo/alertas. Nenhuma dessas versões deve ser antecipada nesta entrega.
+
+## Pendências do produto e da arquitetura
+
+- Período padrão de coleta pendente; 7 dias é somente uma proposta.
+- Contratos detalhados, validações e decisões operacionais ainda não especificados estão listados em [business-rules.md](business-rules.md).
+- Escolha do provider de notícias e viabilidade dos providers reais, incluindo acesso ao X. Providers mockados compatíveis devem permitir o fluxo completo sem integrações externas.

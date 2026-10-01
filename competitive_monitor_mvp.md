@@ -1,5 +1,18 @@
 # Competitive Monitor — Proposta de MVP e Organização do Projeto
 
+Este documento registra a **visão do produto, as decisões de escopo, o roadmap e a organização inicial do projeto**. Seu papel é estratégico: explicar o problema, o recorte do MVP e as possibilidades de evolução.
+
+A referência oficial para **modelo de dados, endpoints, tecnologias, usuários e fluxos do MVP** é [docs/arquitetura.md](docs/arquitetura.md), documento da entrega de arquitetura da Aula 1. Os detalhes técnicos são mantidos nessa referência, evitando contratos duplicados aqui.
+
+Referências do projeto:
+
+- [Arquitetura oficial — Aula 1](docs/arquitetura.md).
+- [Registro dos prompts de arquitetura — Aula 1](prompts/prompt_architecture.md).
+- [Prompt de geração de contexto — Aula 2](prompts/context-generation.md).
+- [Prompt de implementação — Aula 2](prompts/implementation.md).
+
+A base técnica do backend já existe; as funcionalidades de negócio e o frontend ainda serão implementados. O planejamento abaixo não deve ser interpretado como registro de funcionalidades entregues.
+
 ## 1. Objetivo do projeto
 
 Desenvolver um **MVP de monitoramento competitivo de empresas**, capaz de centralizar acontecimentos recentes relacionados a uma empresa-alvo e seus concorrentes.
@@ -8,6 +21,7 @@ A proposta é começar com um escopo pequeno e demonstrável, focado principalme
 
 - Notícias;
 - Publicações no X/Twitter;
+- Perfil básico manual e opcional das empresas;
 - Comparação entre empresa-alvo e concorrentes;
 - Visualização dos acontecimentos em uma timeline única.
 
@@ -23,9 +37,10 @@ O usuário cria uma análise competitiva informando:
 
 - Empresa-alvo;
 - Site da empresa;
-- Concorrentes que deseja acompanhar.
+- Concorrentes que deseja acompanhar;
+- Opcionalmente, termo de busca e perfil básico de cada empresa.
 
-O sistema coleta acontecimentos recentes relacionados às empresas configuradas e apresenta os resultados de forma consolidada.
+O analista aciona a coleta de acontecimentos recentes das empresas configuradas e consulta os resultados de forma consolidada. O perfil básico é opcional e não condiciona a coleta.
 
 Fluxo principal:
 
@@ -70,29 +85,25 @@ Concorrentes:
 
 Neste primeiro momento, **os concorrentes serão informados manualmente pelo usuário**.
 
+Os concorrentes podem ser adicionados ou removidos depois da criação da análise. Para demonstrar o fluxo completo do MVP, deve haver ao menos um concorrente.
+
 A descoberta automática de concorrentes ficará para versões futuras.
 
 ---
 
 ## 3.2 Cadastro de empresas
 
-Cada empresa deverá possuir inicialmente:
+Cada empresa é cadastrada com nome e site. `Company` representa a empresa; o papel de empresa-alvo (`TARGET`) ou concorrente (`COMPETITOR`) pertence a `AnalysisCompany.role`, dentro de cada análise. Assim, a mesma empresa pode assumir papéis diferentes em análises distintas.
 
-```text
-Company
+O **perfil básico manual faz parte do MVP**, com os campos opcionais:
 
-- id
-- name
-- website
-- type
-```
+- Mercado;
+- Produtos;
+- Público-alvo.
 
-Tipos:
+O analista pode preencher e editar esse perfil para contextualizar a comparação. A coleta funciona mesmo sem o perfil. A geração automática e o enriquecimento do perfil ficam para versões futuras.
 
-```text
-TARGET
-COMPETITOR
-```
+O cadastro também permite um termo de busca opcional, `search_term`, cujo padrão é o nome da empresa. O modelo detalhado está na [arquitetura oficial](docs/arquitetura.md).
 
 ---
 
@@ -100,7 +111,7 @@ COMPETITOR
 
 O sistema deverá consultar uma fonte externa de notícias, inicialmente utilizando a **GNews API** ou um provider equivalente.
 
-As pesquisas serão realizadas utilizando o nome da empresa.
+As pesquisas serão realizadas usando o `search_term` da empresa ou, quando não informado, seu nome. Isso permite buscar “Banco Inter” em vez do nome ambíguo “Inter”.
 
 Exemplo:
 
@@ -121,18 +132,20 @@ A arquitetura deverá prever uma segunda fonte de informação para publicaçõe
 
 A implementação poderá utilizar:
 
-- API oficial do X, caso seja viável;
-- Dados mockados, caso existam limitações de autenticação, custo ou disponibilidade.
+- **X Provider** com API oficial, caso seja viável;
+- **Mock Provider** com dados simulados, caso existam limitações de autenticação, custo ou disponibilidade.
 
-O objetivo do MVP não é depender da API do X para funcionar.
+O MVP não depende da API do X para funcionar. Eventos mockados são identificados por `is_mock` e devem ser reconhecíveis na apresentação dos resultados.
+
+A coleta mantém a deduplicação básica de eventos. Se um provider falhar, as demais fontes continuam, com indicação do status de cada fonte. As regras técnicas estão na [arquitetura oficial](docs/arquitetura.md).
 
 ---
 
 ## 3.5 Timeline competitiva
 
-A principal visualização do sistema será uma timeline consolidada.
+A principal visualização do sistema será uma timeline comparativa consolidada das empresas vinculadas à análise.
 
-Exemplo:
+Exemplo ilustrativo, com acontecimentos fictícios. O período padrão de 7 dias ainda depende de confirmação do grupo:
 
 ```text
 Competitive Monitor
@@ -168,7 +181,7 @@ C6 anuncia alteração em produto financeiro.
 19/09/2026
 ```
 
-Filtros desejáveis:
+Filtros previstos:
 
 - Empresa;
 - Fonte;
@@ -178,8 +191,9 @@ Filtros desejáveis:
 
 # 4. Escopo que NÃO faz parte do MVP
 
-As funcionalidades abaixo representam a evolução natural do produto, mas **não precisam ser implementadas na primeira versão**:
+As funcionalidades abaixo **não fazem parte do MVP**. Algumas representam possibilidades de evolução futura:
 
+- Mapa Competitivo;
 - Crawling completo do site da empresa;
 - Geração automática do perfil da empresa (no MVP, o perfil básico é preenchido manualmente);
 - Descoberta automática de concorrentes;
@@ -191,11 +205,13 @@ As funcionalidades abaixo representam a evolução natural do produto, mas **nã
   - Emergentes;
 - Score de confiança;
 - Justificativa automática de concorrência;
-- Análise de tese de investimento;
+- Análise por IA, incluindo análise de tese de investimento;
 - Classificação automática de impacto;
 - Alertas e notificações;
 - Histórico avançado de decisões;
 - Processamento contínuo em background.
+
+O MVP possui apenas o perfil funcional de **Analista**. Autenticação, autorização e múltiplos níveis de acesso estão fora do escopo.
 
 O objetivo é garantir que o MVP seja **pequeno, implementável e demonstrável**.
 
@@ -203,23 +219,25 @@ O objetivo é garantir que o MVP seja **pequeno, implementável e demonstrável*
 
 # 5. Roadmap de evolução
 
-## Versão 1 — MVP
+## V1 — MVP
 
 ```text
 Empresa-alvo
       ↓
 Concorrentes definidos manualmente
       ↓
-Notícias + X/Twitter
+Perfil básico manual (opcional)
+      ↓
+Notícias + X/Twitter (providers reais ou mockados)
       ↓
 Timeline comparativa
 ```
 
 ---
 
-## Versão 2 — Perfil competitivo
+## V2 — Enriquecimento automático do perfil
 
-Adicionar coleta e análise do site oficial das empresas.
+Evoluir o perfil manual já disponível na V1 com análise do site oficial e extração automática de informações, sujeitas à revisão do analista. Esta versão acrescenta automação e enriquecimento, não a existência do perfil.
 
 Informações possíveis:
 
@@ -246,9 +264,9 @@ Validação pelo analista
 
 ---
 
-## Versão 3 — Descoberta automática de concorrentes
+## V3 — Descoberta/classificação de concorrentes
 
-O sistema poderá utilizar o perfil confirmado da empresa para pesquisar possíveis concorrentes.
+Nesta evolução futura, o sistema poderá utilizar o perfil enriquecido e revisado pelo analista para pesquisar e classificar possíveis concorrentes. A confirmação de perfil não é requisito da V1.
 
 Fluxo:
 
@@ -275,9 +293,9 @@ Possíveis classificações:
 
 ---
 
-## Versão 4 — Inteligência competitiva com IA
+## V4 — Inteligência competitiva com IA
 
-A evolução seguinte poderá utilizar modelos de linguagem para transformar notícias e publicações em eventos estruturados.
+A evolução seguinte poderá utilizar modelos de linguagem para enriquecer os eventos já normalizados no MVP com resumos, categorias e avaliação de impacto.
 
 Exemplo:
 
@@ -304,9 +322,9 @@ Evidências:
 
 ---
 
-## Versão 5 — Monitoramento contínuo
+## V5 — Monitoramento contínuo e alertas
 
-Adicionar processamento periódico.
+Adicionar processamento periódico, detecção de novos acontecimentos e alertas. Na V1, a coleta permanece acionada manualmente.
 
 ```mermaid
 flowchart TD
@@ -321,253 +339,48 @@ flowchart TD
 
 ---
 
-# 6. Arquitetura proposta para o MVP
+# 6. Diretriz de arquitetura
 
-Arquitetura inicialmente simples:
+A solução combina uma aplicação web, backend REST, banco de dados e providers de fontes externas. Essa separação permite evoluir as integrações sem concentrar suas particularidades na interface ou nas regras do produto.
 
-```mermaid
-flowchart LR
-    U[Usuário] --> F[Frontend]
-
-    F --> B[Backend REST API]
-
-    B --> DB[(Banco de Dados)]
-
-    B --> SP[Source Providers]
-
-    SP --> GN[GNews Provider]
-    SP --> XP[X Provider / Mock Provider]
-```
-
-## Componentes
-
-### Frontend
-
-Responsável por:
-
-- Criar análises;
-- Cadastrar empresas;
-- Cadastrar concorrentes;
-- Executar coleta;
-- Exibir timeline;
-- Aplicar filtros.
-
-### Backend
-
-Responsável por:
-
-- Regras de negócio;
-- Endpoints REST;
-- Persistência;
-- Integração com providers externos;
-- Normalização dos acontecimentos coletados.
-
-### Banco de dados
-
-Responsável por armazenar:
-
-- Análises;
-- Empresas;
-- Relacionamento entre análises e empresas;
-- Eventos coletados.
-
-### Source Providers
-
-Camada responsável por abstrair as fontes externas.
-
-Exemplo:
-
-```text
-SourceProvider
-
-├── GNewsProvider
-└── XProvider
-```
-
-Isso permite trocar ou adicionar fontes futuramente sem alterar a lógica principal da aplicação.
+O diagrama de componentes e as tecnologias confirmadas estão na [arquitetura oficial](docs/arquitetura.md). O framework de frontend permanece a definir pelo grupo.
 
 ---
 
-# 7. Modelo inicial de dados
+# 7. Conceitos principais do domínio
 
-## Analysis
+- **Analysis:** organiza uma análise competitiva.
+- **Company:** representa uma empresa, incluindo seu perfil básico manual e termo de busca.
+- **AnalysisCompany:** vincula empresa e análise; seu `role` determina `TARGET` ou `COMPETITOR` naquele contexto.
+- **Event:** representa um acontecimento coletado para uma empresa, com identificação da fonte e de dados mockados.
 
-```text
-id
-name
-created_at
-```
-
----
-
-## Company
-
-```text
-id
-name
-website
-```
+Os atributos, chaves e regras de persistência são definidos na [arquitetura oficial](docs/arquitetura.md).
 
 ---
 
-## AnalysisCompany
+# 8. Relações entre os conceitos
 
-Relaciona empresas com uma análise.
+Uma análise reúne uma empresa-alvo e seus concorrentes por meio dos vínculos de participação. Uma empresa pode participar de várias análises e reunir vários eventos. O papel da empresa depende de cada vínculo, não de uma classificação fixa da empresa.
 
-```text
-analysis_id
-company_id
-role
-```
-
-Valores de `role`:
-
-```text
-TARGET
-COMPETITOR
-```
+O diagrama de entidades e relacionamentos é mantido em [docs/arquitetura.md](docs/arquitetura.md).
 
 ---
 
-## Event
+# 9. Capacidades da API
 
-Representa um acontecimento coletado.
+A API dará suporte à criação e consulta de análises, à manutenção de concorrentes e perfis, à execução da coleta e à consulta dos eventos com filtros.
 
-```text
-id
-company_id
-source
-title
-description
-url
-published_at
-collected_at
-```
-
-Possíveis fontes:
-
-```text
-GNEWS
-X
-```
+A lista oficial de endpoints está em [docs/arquitetura.md](docs/arquitetura.md). Este documento não mantém uma segunda definição dos contratos REST.
 
 ---
 
-# 8. Relacionamento entre entidades
+# 10. Jornada de coleta e consulta
 
-```mermaid
-erDiagram
+O analista seleciona as empresas da análise, ajusta seus termos de busca e aciona a coleta. O sistema consulta os providers, normaliza e persiste os resultados sem duplicações básicas e apresenta os acontecimentos na timeline.
 
-    ANALYSIS ||--o{ ANALYSIS_COMPANY : contains
-    COMPANY ||--o{ ANALYSIS_COMPANY : participates
-    COMPANY ||--o{ EVENT : generates
+Eventos mockados permanecem identificados. Uma falha de fonte não impede o aproveitamento dos resultados das demais; o analista recebe a indicação do status de cada fonte. O perfil manual continua opcional.
 
-    ANALYSIS {
-        int id
-        string name
-        datetime created_at
-    }
-
-    COMPANY {
-        int id
-        string name
-        string website
-    }
-
-    ANALYSIS_COMPANY {
-        int analysis_id
-        int company_id
-        string role
-    }
-
-    EVENT {
-        int id
-        int company_id
-        string source
-        string title
-        string description
-        string url
-        datetime published_at
-        datetime collected_at
-    }
-```
-
----
-
-# 9. Endpoints REST iniciais
-
-## Análises
-
-```http
-POST /analyses
-GET  /analyses
-GET  /analyses/{id}
-```
-
----
-
-## Empresas da análise
-
-```http
-POST /analyses/{id}/companies
-GET  /analyses/{id}/companies
-```
-
----
-
-## Coleta
-
-```http
-POST /analyses/{id}/collect
-```
-
-Este endpoint deverá iniciar a busca dos acontecimentos das empresas relacionadas à análise.
-
----
-
-## Eventos
-
-```http
-GET /analyses/{id}/events
-GET /companies/{id}/events
-```
-
----
-
-# 10. Fluxo principal do backend
-
-```mermaid
-sequenceDiagram
-
-    actor User
-    participant Frontend
-    participant Backend
-    participant GNews
-    participant XProvider
-    participant Database
-
-    User->>Frontend: Executar coleta
-    Frontend->>Backend: POST /analyses/{id}/collect
-
-    Backend->>Database: Buscar empresas da análise
-
-    loop Para cada empresa
-        Backend->>GNews: Buscar notícias
-        GNews-->>Backend: Resultados
-
-        Backend->>XProvider: Buscar publicações
-        XProvider-->>Backend: Resultados
-
-        Backend->>Database: Salvar eventos normalizados
-    end
-
-    Backend-->>Frontend: Coleta concluída
-
-    Frontend->>Backend: GET /analyses/{id}/events
-    Backend->>Database: Consultar eventos
-    Database-->>Backend: Eventos
-    Backend-->>Frontend: Timeline
-```
+Os fluxos técnicos e as regras de coleta estão na [arquitetura oficial](docs/arquitetura.md).
 
 ---
 
@@ -588,6 +401,7 @@ competitive-monitor/
 │   └── arquitetura.md
 │
 ├── prompts/
+│   ├── prompt_architecture.md
 │   ├── context-generation.md
 │   └── implementation.md
 │
@@ -639,10 +453,11 @@ Responsabilidades principais:
 - Estruturar o frontend;
 - Criar tela de listagem de análises;
 - Criar formulário para nova análise;
-- Criar cadastro de concorrentes;
+- Criar cadastro e remoção de concorrentes;
+- Permitir edição do perfil básico manual e do termo de busca;
 - Criar página de visualização de uma análise;
 - Implementar timeline;
-- Implementar filtros por empresa e fonte;
+- Implementar filtros por empresa, fonte e período;
 - Integrar frontend com backend.
 
 Entregas principais:
@@ -688,20 +503,7 @@ Entregas principais:
 backend/
 ```
 
-Endpoints prioritários:
-
-```text
-POST /analyses
-
-GET /analyses
-GET /analyses/{id}
-
-POST /analyses/{id}/companies
-
-POST /analyses/{id}/collect
-
-GET /analyses/{id}/events
-```
+Priorizar os fluxos de análise, manutenção de empresas e perfil, coleta e timeline, seguindo os endpoints definidos em [docs/arquitetura.md](docs/arquitetura.md).
 
 ---
 
@@ -710,7 +512,7 @@ GET /analyses/{id}/events
 Responsabilidades principais:
 
 - Implementar camada `SourceProvider`;
-- Implementar `GNewsProvider`;
+- Implementar `GNewsProvider` ou equivalente;
 - Avaliar viabilidade do `XProvider`;
 - Criar `MockXProvider` caso necessário;
 - Normalizar dados recebidos das fontes externas;
@@ -721,7 +523,7 @@ Responsabilidades principais:
 Entregas principais:
 
 ```text
-backend/providers/
+Camada de providers no backend (organização a definir na implementação)
 .ai/
 prompts/
 README.md
@@ -735,12 +537,12 @@ Os arquivos `.ai/` deverão ser revisados pelo grupo. Aqui o responsável terá 
 
 # 13. Responsabilidades compartilhadas
 
-Algumas atividades deverão ser feitas em conjunto.
+Algumas atividades deverão ser feitas em conjunto. As listas abaixo preservam a organização inicial do trabalho; não constituem um registro atualizado de execução.
 
 ## Definição
 
 - [ ] Aprovar escopo final do MVP;
-- [ ] Escolher stack;
+- [ ] Definir o framework do frontend e revisar as tecnologias já confirmadas na arquitetura;
 - [ ] Escolher cenário utilizado na demonstração;
 - [ ] Aprovar entidades;
 - [ ] Aprovar endpoints.
@@ -764,13 +566,15 @@ Algumas atividades deverão ser feitas em conjunto.
 
 ---
 
-# 14. TODO geral
+# 14. Checklist de planejamento
+
+As fases organizam as entregas do projeto. A base do backend já foi iniciada; os itens não assinalados não significam necessariamente ausência de trabalho realizado. O estado técnico atual deve ser consultado na arquitetura oficial e no README.
 
 ## Fase 1 — Definição
 
 - [ ] Definir nome definitivo do projeto;
 - [ ] Fechar escopo do MVP;
-- [ ] Escolher stack;
+- [ ] Definir o framework do frontend e revisar as tecnologias já confirmadas na arquitetura;
 - [ ] Definir entidades;
 - [ ] Definir endpoints;
 - [ ] Criar diagrama de arquitetura;
@@ -807,7 +611,7 @@ Algumas atividades deverão ser feitas em conjunto.
 ## Fase 4 — Integrações
 
 - [ ] Definir interface `SourceProvider`;
-- [ ] Implementar `GNewsProvider`;
+- [ ] Implementar `GNewsProvider` ou equivalente;
 - [ ] Testar consultas;
 - [ ] Avaliar API do X;
 - [ ] Implementar `XProvider` ou `MockXProvider`;
@@ -820,12 +624,15 @@ Algumas atividades deverão ser feitas em conjunto.
 
 - [ ] Tela de análises;
 - [ ] Criar análise;
-- [ ] Cadastrar concorrentes;
+- [ ] Cadastrar e remover concorrentes;
+- [ ] Editar perfil básico manual e termo de busca;
 - [ ] Página da análise;
 - [ ] Botão para executar coleta;
 - [ ] Timeline;
 - [ ] Filtro por empresa;
 - [ ] Filtro por fonte;
+- [ ] Filtro por período;
+- [ ] Identificar eventos mockados;
 - [ ] Integração com backend.
 
 ---
@@ -838,7 +645,9 @@ Algumas atividades deverão ser feitas em conjunto.
 - [ ] Testar persistência;
 - [ ] Testar timeline;
 - [ ] Tratar estados vazios;
-- [ ] Tratar erros de API externa.
+- [ ] Tratar falhas parciais dos providers;
+- [ ] Validar deduplicação básica;
+- [ ] Confirmar coleta com perfil não preenchido.
 
 ---
 
@@ -881,10 +690,10 @@ Fluxo da demonstração:
 2. Mostrar criação da análise;
 3. Mostrar empresa-alvo;
 4. Adicionar concorrentes;
-5. Executar coleta;
-6. Mostrar notícias e publicações;
-7. Mostrar timeline consolidada;
-8. Filtrar por concorrente;
+5. Mostrar o perfil básico manual opcional e o termo de busca;
+6. Executar coleta;
+7. Mostrar notícias e publicações, identificando os eventos mockados;
+8. Mostrar a timeline comparativa e filtrar por concorrente;
 9. Explicar rapidamente a arquitetura;
 10. Apresentar a evolução futura.
 
@@ -898,6 +707,8 @@ O MVP deverá provar o seguinte conceito:
 
 > **É possível acompanhar uma empresa e seus concorrentes em uma única interface, consolidando acontecimentos recentes provenientes de diferentes fontes públicas.**
 
-A partir dessa base, a arquitetura poderá evoluir para perfil automático, descoberta de concorrentes, análise com IA e monitoramento contínuo.
+A demonstração deve atender ao critério de aceite da arquitetura oficial: criar uma análise, informar empresa-alvo e ao menos um concorrente, executar coleta real ou mockada, persistir eventos e consultar a timeline.
+
+A partir dessa base, o produto poderá evoluir para enriquecimento automático do perfil, descoberta/classificação de concorrentes, análise com IA e monitoramento contínuo com alertas.
 
 Esse recorte permite entregar um sistema pequeno e funcional, ao mesmo tempo em que apresenta uma visão clara de evolução para um produto mais completo.

@@ -1,16 +1,99 @@
 # Stack técnica
 
-Status: pendente de definição pelo grupo. A proposta original não determina linguagens, frameworks ou banco de dados.
+Referência técnica do projeto. Prioridade: [arquitetura oficial](../docs/arquitetura.md), [visão estratégica](../competitive_monitor_mvp.md) e evidências do repositório.
 
-| Componente | Definição inicial |
+## Estados da stack
+
+| Área | Decisão | Estado |
+| --- | --- | --- |
+| Backend | Python 3.14, FastAPI e Uvicorn | Implementado/configurado |
+| Configuração | Pydantic Settings, variáveis de ambiente e arquivo local .env | Implementado/configurado |
+| Persistência — infraestrutura | PostgreSQL 16, SQLAlchemy síncrono e psycopg | Implementado/configurado |
+| Migrações — infraestrutura | Alembic, ainda sem revisões de negócio | Implementado/configurado |
+| Dependências | uv, pyproject.toml e uv.lock | Implementado/configurado |
+| Testes da base | pytest e HTTPX/TestClient | Implementado/configurado |
+| Lint/formatação | Ruff | Implementado/configurado |
+| Ambiente local | Banco via Docker Compose; API local com Uvicorn | Implementado/configurado |
+| Comunicação — base | API REST com health checks | Implementado/configurado |
+| Documentação | Markdown e Mermaid | Implementado/configurado |
+| Persistência de negócio | Modelos e migrações das entidades do MVP | Planejado para o MVP |
+| Endpoints de negócio | API REST para análises, empresas, coleta e eventos | Planejado para o MVP |
+| Web UI — renderização | Jinja2 e HTML5, renderizados pelo próprio FastAPI | Confirmado / planejado para implementação; ainda não configurado |
+| Web UI — estilização | Tailwind CSS compilado para CSS estático | Confirmado / planejado para implementação; ainda não configurado |
+| Web UI — interações | HTMX; JavaScript vanilla apenas quando necessário | Confirmado / planejado para implementação; ainda não configurado |
+| Notícias | Integração com GNews ou equivalente | Planejado para o MVP |
+| X/Twitter | X Provider opcional conforme viabilidade | Planejado para o MVP |
+| Integração real/mock | Mock Providers compatíveis para execução local e demonstração sem credenciais externas | Planejado para o MVP |
+| Provider real de notícias | Escolha definitiva entre GNews ou equivalente | Pendente de decisão |
+| API do X | Viabilidade de acesso e uso da integração real | Pendente de decisão |
+| Período padrão da coleta | 7 dias é apenas uma proposta | Pendente de decisão |
+
+Frontend: Web UI server-rendered pelo próprio FastAPI, com Jinja2, HTML5, Tailwind CSS e HTMX. JavaScript vanilla apenas quando necessário. Não há SPA, aplicação frontend independente, React, Vue ou Next.js.
+
+Mock Providers fazem parte da estratégia técnica do MVP e atendem à mesma abstração dos providers reais; não são uma tecnologia externa separada. Devem garantir execução local e demonstração sem credenciais externas, independentemente da viabilidade das integrações reais.
+
+## Arquitetura da interface
+
+- Web Routes retornam páginas completas ou fragmentos HTML renderizados com Jinja2.
+- HTMX realiza interações e atualizações parciais por meio das Web Routes.
+- A REST API permanece disponível com seus endpoints oficiais.
+- Web Routes e REST API Routes reutilizam diretamente a mesma camada `Application / Services`.
+- A aplicação não deve fazer HTTP interno para sua própria REST API apenas para reutilizar lógica.
+
+Web UI e REST API são duas interfaces para os mesmos serviços no monólito modular FastAPI. A Web UI ainda não está implementada.
+
+## Assets da Web UI
+
+- Compilar Tailwind CSS para CSS estático.
+- Servir os arquivos estáticos pela aplicação FastAPI.
+- Disponibilizar HTMX como asset local para execução e demonstração.
+- Evitar dependência de CDN em runtime.
+
+A compilação de assets deve usar somente a ferramenta de build necessária, sem introduzir uma estrutura mais complexa ou um frontend independente. Node.js não é runtime nem componente arquitetural da aplicação; a escolha da ferramenta de compilação não altera essa decisão.
+
+## Versões verificadas nos arquivos
+
+Python: `3.14` em [.python-version](../backend/.python-version), com faixa `>=3.14,<3.15` em [pyproject.toml](../backend/pyproject.toml). Esses arquivos não fixam a versão de patch do interpretador.
+
+PostgreSQL: imagem `postgres:16` no [compose.yaml](../backend/compose.yaml). A tag não fixa patch ou digest.
+
+Versões abaixo registradas em [uv.lock](../backend/uv.lock), não inferidas da instalação local:
+
+| Pacote | Versão no lockfile |
 | --- | --- |
-| Backend: linguagem e framework | A definir |
-| Frontend: linguagem e framework | A definir |
-| Banco de dados e migrações | A definir |
-| Comunicação | API REST, conforme proposta |
-| Notícias | GNews API ou provider equivalente; escolha a confirmar |
-| X/Twitter | API oficial, se viável, ou provider com dados mockados |
-| Testes e formatação | A definir após a escolha das linguagens |
-| Ambiente e implantação | A definir |
+| fastapi | 0.141.1 |
+| uvicorn | 0.54.0 |
+| pydantic-settings | 2.15.0 |
+| sqlalchemy | 2.0.54 |
+| psycopg | 3.3.6 |
+| alembic | 1.20.0 |
+| pytest | 9.1.1 |
+| httpx | 0.28.1 |
+| ruff | 0.16.9 |
 
-Registrar aqui as escolhas, versões e justificativas quando forem definidas. A estrutura atual contém documentação, sem dependências instaladas ou aplicações executáveis.
+Não há versão exata de uv ou Docker Compose fixada nos manifests. Não inventar versões. Não alterar dependências sem necessidade técnica e manter o lockfile consistente.
+
+Jinja2, Tailwind CSS e HTMX são tecnologias confirmadas para o MVP, mas ainda não estão configuradas nos manifests, no lockfile ou nos assets do projeto. Não há versões verificáveis dessas dependências a registrar. HTML5 e JavaScript vanilla compõem a decisão de interface, cujo código ainda não existe.
+
+## Configuração existente a preservar
+
+- Banco em `127.0.0.1:5433`, volume persistente e health check do PostgreSQL.
+- `APP_NAME`, `ENVIRONMENT`, `LOG_LEVEL` e `DATABASE_URL` no Settings; variáveis do processo precedem `backend/.env`.
+- Driver `postgresql+psycopg://`; credenciais reais fora do código/versionamento.
+- Sessões síncronas com encerramento por requisição; migrações explícitas.
+- API local documentada na porta 8000, com Swagger e OpenAPI.
+
+Instruções de execução: [backend/README.md](../backend/README.md).
+
+## Execução e deployment
+
+A execução local é requisito do MVP. Implantação/deploy permanece fora do escopo da entrega atual, sem plataforma definida.
+
+## Pendências do grupo
+
+- Período padrão de coleta; 7 dias ainda não confirmado.
+- Escolha do provider de notícias e viabilidade do X real; credenciais e limites operacionais quando aplicáveis.
+- Contratos e validações pendentes em [business-rules.md](business-rules.md).
+- Cenário final de demonstração; bancos digitais permanece uma sugestão estratégica.
+
+O modo mock deve viabilizar o MVP independentemente da viabilidade das integrações reais. Preservar a Web UI integrada definida acima, sem introduzir serviços de IA, autenticação, filas ou workers.
