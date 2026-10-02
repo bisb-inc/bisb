@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}{{ analysis.name }} · Competitive Monitor{% endblock %}
+{% block content %}
+<div class="mb-8 flex flex-wrap items-end justify-between gap-4 border-b border-line pb-5">
+  <div>
+    <a href="/ui/analyses" class="text-sm text-muted hover:text-accent">← Todas as análises</a>
+    <h1 class="mt-3 text-3xl font-semibold tracking-tight">{{ analysis.name }}</h1>
+    <p class="mt-2 text-sm text-muted">Timeline comparativa de notícias e publicações.</p>
+  </div>
+  <div class="text-sm text-muted"><span class="font-semibold text-ink">{{ analysis.companies|length }}</span> empresas monitoradas</div>
+</div>
+<nav class="mb-8 flex gap-6 border-b border-line" aria-label="Seções da análise">
+  <a class="tab-link {% if tab == 'monitoring' %}tab-link-active{% endif %}" href="/ui/analyses/{{ analysis.id }}?tab=monitoring" {% if tab == 'monitoring' %}aria-current="page"{% endif %}>Monitoramento</a>
+  <a class="tab-link {% if tab == 'profile' %}tab-link-active{% endif %}" href="/ui/analyses/{{ analysis.id }}?tab=profile" {% if tab == 'profile' %}aria-current="page"{% endif %}>Perfil da empresa</a>
+</nav>
+{% if tab == 'profile' %}
+  <section id="profile-panel" class="space-y-8" aria-labelledby="profile-heading">
+    <div><p class="text-xs font-semibold uppercase tracking-[0.16em] text-accent">Dados compartilhados</p><h2 id="profile-heading" class="mt-2 text-2xl font-semibold">Perfil das empresas</h2><p class="mt-2 text-sm text-muted">Alterações no perfil se aplicam a todas as análises que usam a mesma empresa.</p></div>
+    {% for link in analysis.companies %}{% set profile_company = link.company %}{% set profile_role = link.role %}{% include "partials/company_profile.html" %}{% endfor %}
+  </section>
+{% else %}
+  <div class="grid gap-10 xl:grid-cols-[minmax(0,1fr)_340px]">
+    <section aria-labelledby="timeline-heading" class="min-w-0">
+      <div class="mb-5 flex flex-wrap items-end justify-between gap-3">
+        <div><p class="text-xs font-semibold uppercase tracking-[0.16em] text-accent">Monitoramento</p><h2 id="timeline-heading" class="mt-2 text-2xl font-semibold">Timeline</h2></div>
+        <span class="text-sm text-muted">{{ events|length }} acontecimentos</span>
+      </div>
+      <form class="mb-6 grid gap-3 border-y border-line py-4 sm:grid-cols-2 xl:grid-cols-4" action="/ui/analyses/{{ analysis.id }}" method="get" hx-get="/ui/analyses/{{ analysis.id }}/timeline" hx-target="#timeline" hx-swap="innerHTML" hx-indicator="#filter-loading">
+        <div><label for="filter-company" class="field-label">Empresa</label><select id="filter-company" name="company" class="field-input"><option value="">Todas</option>{% for link in analysis.companies %}<option value="{{ link.company_id }}" {% if selected_company == link.company_id %}selected{% endif %}>{{ link.company.name }}{% if link.role.value == 'TARGET' %} · TARGET{% endif %}</option>{% endfor %}</select></div>
+        <div><label for="filter-source" class="field-label">Fonte</label><select id="filter-source" name="source" class="field-input"><option value="">Todas</option>{% for source in sources %}<option value="{{ source.value }}" {% if selected_source == source %}selected{% endif %}>{{ source.value }}</option>{% endfor %}</select></div>
+        <div><label for="filter-from" class="field-label">De</label><input id="filter-from" name="from_date" type="date" value="{{ from_date.isoformat() if from_date else '' }}" class="field-input"></div>
+        <div><label for="filter-to" class="field-label">Até</label><input id="filter-to" name="to_date" type="date" value="{{ to_date.isoformat() if to_date else '' }}" class="field-input"></div>
+        <div class="flex items-center gap-3 sm:col-span-2 xl:col-span-4"><button class="button-secondary" type="submit">Aplicar filtros</button><a href="/ui/analyses/{{ analysis.id }}" class="text-sm text-muted underline">Limpar filtros</a><span id="filter-loading" class="htmx-indicator text-xs text-muted" role="status">Atualizando timeline…</span></div>
+      </form>
+      <div id="timeline" aria-live="polite">{% include "partials/timeline.html" %}</div>
+    </section>
+    <aside class="space-y-8">
+      <section class="border border-line bg-white p-5" aria-labelledby="collection-heading">
+        <p class="text-xs font-semibold uppercase tracking-[0.16em] text-accent">Atualização manual</p><h2 id="collection-heading" class="mt-2 text-lg font-semibold">Executar coleta</h2>
+        <p class="mt-2 text-sm leading-6 text-muted">Informe o período desta execução. Cada fonte mock retorna itens previsíveis, sem credenciais externas.</p>
+        <form action="/ui/analyses/{{ analysis.id }}/collect" method="post" hx-post="/ui/analyses/{{ analysis.id }}/collect" hx-target="#collection-result" hx-swap="innerHTML" hx-indicator="#collect-loading" class="mt-5 space-y-3">
+          <div><label for="collect-from" class="field-label">De</label><input id="collect-from" name="from_date" type="date" required class="field-input"></div>
+          <div><label for="collect-to" class="field-label">Até</label><input id="collect-to" name="to_date" type="date" required class="field-input"></div>
+          <button class="button-primary w-full" type="submit">Executar coleta</button>
+          <p id="collect-loading" class="htmx-indicator text-sm text-muted" role="status">Consultando fontes…</p>
+        </form>
+        <div id="collection-result" class="mt-4" aria-live="polite"></div>
+      </section>
+      <section aria-labelledby="companies-heading">
+        <div class="mb-3 flex items-center justify-between"><h2 id="companies-heading" class="text-lg font-semibold">Empresas</h2><span class="text-xs text-muted">{{ analysis.companies|length }}</span></div>
+        {% include "partials/competitors.html" %}
+        <form action="/ui/analyses/{{ analysis.id }}/competitors" method="post" hx-post="/ui/analyses/{{ analysis.id }}/competitors" hx-target="#competitors" hx-swap="outerHTML" class="mt-4 space-y-3 border-t border-line pt-4">
+          <label for="competitor-name" class="field-label">Adicionar concorrente</label><input id="competitor-name" name="name" required maxlength="160" class="field-input" placeholder="Nome da empresa">
+          <label for="competitor-website" class="field-label">Site</label><input id="competitor-website" name="website" type="url" required class="field-input" placeholder="https://empresa.com.br">
+          <button class="button-secondary w-full" type="submit">Adicionar concorrente</button>
+        </form>
+      </section>
+    </aside>
+  </div>
+{% endif %}
+{% endblock %}

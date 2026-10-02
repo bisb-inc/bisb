@@ -1,0 +1,29 @@
+@import "tailwindcss";
+@source "../../web/templates";
+
+@theme {
+  --color-paper: #f7f8fa;
+  --color-ink: #182230;
+  --color-muted: #687586;
+  --color-line: #dce2e8;
+  --color-accent: #245bd6;
+  --color-success: #18835e;
+  --color-warning: #b56b00;
+  --color-danger: #bd3d3d;
+  --font-sans: "Segoe UI", "Inter", ui-sans-serif, system-ui, sans-serif;
+}
+
+@layer components {
+  .field-label { @apply mb-1.5 block text-xs font-medium text-ink; }
+  .field-input { @apply w-full rounded-sm border border-line bg-white px-3 py-2.5 text-sm text-ink outline-none transition-colors focus:border-accent focus:ring-2 focus:ring-accent/20; }
+  .button-primary { @apply inline-flex min-h-10 items-center justify-center gap-2 rounded-sm bg-ink px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent; }
+  .button-secondary { @apply inline-flex min-h-10 items-center justify-center gap-2 rounded-sm border border-line bg-white px-4 py-2 text-sm font-semibold text-ink transition-colors hover:border-accent hover:text-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent; }
+  .tab-link { @apply -mb-px border-b-2 border-transparent pb-3 text-sm font-medium text-muted hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent; }
+  .tab-link-active { @apply border-accent text-ink; }
+  .mock-badge { @apply rounded-sm border border-warning/30 bg-warning/10 px-2 py-0.5 font-medium text-warning; }
+}
+
+[hx-indicator] { transition: opacity 120ms ease; }
+.htmx-indicator { display: none; }
+.htmx-request .htmx-indicator, .htmx-request.htmx-indicator { display: inline; }
+:focus-visible { outline-color: #245bd6; }

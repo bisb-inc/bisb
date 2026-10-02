@@ -1,0 +1,9 @@
+<div id="competitors" class="divide-y divide-line border-y border-line">
+  {% for link in analysis.companies %}
+    <div class="flex items-center justify-between gap-3 py-3">
+      <div class="min-w-0"><p class="truncate text-sm font-medium">{{ link.company.name }}</p><p class="mt-0.5 text-xs text-muted">{{ 'Empresa-alvo' if link.role.value == 'TARGET' else 'Concorrente' }}{% if link.role.value == 'TARGET' %} · fixa{% endif %}</p></div>
+      {% if link.role.value == 'COMPETITOR' %}<form action="/ui/analyses/{{ analysis.id }}/competitors/{{ link.company_id }}/remove" method="post" hx-post="/ui/analyses/{{ analysis.id }}/competitors/{{ link.company_id }}/remove" hx-target="#competitors" hx-swap="outerHTML"><button type="submit" class="text-xs text-muted underline decoration-line underline-offset-4 hover:text-danger focus-visible:outline-2 focus-visible:outline-accent" aria-label="Remover {{ link.company.name }}">Remover</button></form>{% endif %}
+    </div>
+  {% endfor %}
+  {% if analysis.companies|length < 2 %}<p class="py-3 text-xs text-muted">Adicione ao menos um concorrente para completar a comparação.</p>{% endif %}
+</div>

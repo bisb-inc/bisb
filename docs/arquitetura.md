@@ -1,15 +1,15 @@
 # Arquitetura do MVP — Entrega da Aula 1
 
 Este é o documento oficial e autocontido da entrega de arquitetura da Aula 1 do **Competitive Monitor**. Consolida o escopo, os usuários, os componentes, os dados, a API, as tecnologias e os fluxos do MVP. A [proposta inicial](../competitive_monitor_mvp.md) permanece como referência complementar.
-A base técnica do backend está implementada com FastAPI, PostgreSQL 16, SQLAlchemy e
-Alembic. A Web UI integrada, o modelo e os endpoints de negócio abaixo permanecem planejados.
+A arquitetura descrita neste documento foi implementada e validada localmente: o monólito FastAPI serve a Web UI Jinja2/HTMX e a REST API por uma camada compartilhada de serviços, com persistência PostgreSQL e providers mockados. A implementação real e seus comandos de execução estão em [backend/README.md](../backend/README.md). Providers reais e o período padrão da coleta permanecem pendentes.
 
 ## Base executável
 
 A API expõe `GET /health` (HTTP 200, sem consultar o banco) e `GET /health/ready`
 (HTTP 200 ao executar `SELECT 1`, HTTP 503 se o banco estiver indisponível).
-Configuração por ambiente, documentação OpenAPI, testes básicos e infraestrutura de
-migrações estão disponíveis. Ainda não há tabelas de negócio. Consulte
+Configuração por ambiente, documentação OpenAPI, tabelas de negócio, migrações,
+testes funcionais e infraestrutura estão disponíveis. A Web UI e a coleta mockada
+também foram validadas localmente. Consulte
 [backend/README.md](../backend/README.md) para execução local.
 
 O MVP permite acompanhar uma empresa-alvo e seus concorrentes em uma **timeline única** de notícias e publicações do X. Cada empresa pode ter um **perfil básico**, preenchido manualmente, que dá contexto à comparação.

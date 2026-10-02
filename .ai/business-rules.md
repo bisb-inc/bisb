@@ -1,6 +1,6 @@
 # Regras de negócio — MVP funcional
 
-Fontes: [arquitetura oficial da Aula 1](../docs/arquitetura.md), [discovery e roadmap](../competitive_monitor_mvp.md) e requisitos confirmados no [Prompt 1 da Aula 2](../prompts/context-generation.md). Regras abaixo descrevem o **estado-alvo**: a inspeção de 29/09/2026 encontrou a base técnica, mas ainda não os modelos, endpoints ou serviços de negócio.
+Fontes: [arquitetura oficial da Aula 1](../docs/arquitetura.md), [discovery e roadmap](../competitive_monitor_mvp.md) e requisitos confirmados no [Prompt 1 da Aula 2](../prompts/context-generation.md). As regras definem o produto; o estado atual da implementação é documentado no [README principal](../README.md) e no [backend/README.md](../backend/README.md).
 
 ## Produto e usuário
 
@@ -85,7 +85,6 @@ Enriquecimento automático do perfil, descoberta/classificação, IA e monitoram
 
 ## Pendências que podem permanecer abertas
 
-- Framework do frontend.
 - Período padrão de coleta.
 - Escolha definitiva e viabilidade dos providers reais.
 - Detalhes exatos dos corpos/respostas HTTP, incluindo a representação dos resultados da coleta.

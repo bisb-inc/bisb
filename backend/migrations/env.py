@@ -1,5 +1,6 @@
 from alembic import context
 
+import app.models  # noqa: F401
 from app.core.config import Settings
 from app.db.base import Base
 from app.db.session import build_engine

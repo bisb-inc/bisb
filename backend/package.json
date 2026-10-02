@@ -1,0 +1,19 @@
+{
+  "name": "competitive-monitor-assets",
+  "version": "1.0.0",
+  "description": "Ferramentas locais para compilar assets da Web UI integrada ao FastAPI.",
+  "scripts": {
+    "copy:htmx": "node scripts/copy-htmx.mjs",
+    "build:css": "tailwindcss -i app/static/css/input.css -o app/static/css/app.css --minify",
+    "build": "npm run copy:htmx && npm run build:css"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "UNLICENSED",
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.3.0",
+    "htmx.org": "^2.0.11",
+    "tailwindcss": "^4.3.0"
+  },
+  "private": true
+}

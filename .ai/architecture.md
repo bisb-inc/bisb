@@ -69,25 +69,21 @@ A API planejada cobre criação/listagem/consulta de análises, adição/remoç�
 
 ## Já implementado — evidências no repositório
 
-- [app/main.py](../backend/app/main.py): aplicação FastAPI, `create_app`, engine no ciclo de vida e liberação ao encerrar.
-- [config.py](../backend/app/core/config.py): configuração tipada por ambiente e arquivo local.
-- [session.py](../backend/app/db/session.py): engine SQLAlchemy síncrono, sessões por requisição e limites de conexão/consulta/pool.
-- [health.py](../backend/app/api/routes/health.py): `GET /health` sem banco e `GET /health/ready` com `SELECT 1`, respostas 200/503; OpenAPI e Swagger pela aplicação.
-- [base.py](../backend/app/db/base.py) e [ambiente Alembic](../backend/migrations/env.py): infraestrutura ORM/migrações, sem modelos de negócio ou revisões em `migrations/versions/`.
-- [Compose](../backend/compose.yaml): PostgreSQL local com volume persistente e health check; API executada localmente.
-- Dependências e ferramentas de testes/lint configuradas; testes da base presentes, sem nova execução nesta revisão.
+- Base FastAPI, configuração por ambiente, engine e sessões SQLAlchemy síncronas, health checks, OpenAPI e Swagger.
+- Entidades `Analysis`, `Company`, `AnalysisCompany` e `Event`, TARGET único por análise, índice de deduplicação e migração Alembic.
+- Application / Services compartilhados por Web Routes e REST API Routes, sem HTTP interno à própria API.
+- Web UI Jinja2 com abas Monitoramento e Perfil da empresa, HTMX local e Tailwind compilado localmente.
+- Providers mockados para notícias e X, coleta com falha parcial, persistência de eventos e timeline com filtros.
+- PostgreSQL via Compose, testes funcionais com SQLite isolado e teste opt-in de fluxo Web UI com PostgreSQL real.
 
-## Planejado para o MVP — ainda não implementado
+O diretório `frontend/` contém documentação da interface; o código Web UI está em `backend/app/web/` e os assets servidos em `backend/app/static/`.
 
-- Web UI integrada com Jinja2, HTML5, Tailwind CSS e HTMX; JavaScript vanilla apenas quando necessário.
-- As quatro entidades de negócio e suas migrações.
-- Application / Services compartilhados, Web Routes e endpoints REST de negócio.
-- Providers reais/mockados, coleta, deduplicação e persistência de eventos.
-- Timeline com filtros e demais fluxos da interface.
+## Planejado para o MVP — pendente de integração
 
-O diretório frontend contém documentação, sem aplicação web. Sua existência não implica uma aplicação independente: a Web UI planejada será servida pelo próprio FastAPI e ainda não está implementada.
+- Provider real definitivo de notícias (GNews ou equivalente).
+- Provider real do X, condicionado à viabilidade de acesso.
 
-A base existente deve ser preservada e ampliada. A prontidão do banco não significa que as tabelas de negócio ou o fluxo competitivo existam.
+O fluxo mockado local não depende dessas integrações. Comandos e evidências verificadas estão no [README do backend](../backend/README.md); não confundir código planejado com integração externa validada.
 
 ## Fora do MVP e roadmap
 

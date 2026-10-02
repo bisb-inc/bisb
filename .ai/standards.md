@@ -1,6 +1,6 @@
 # Padrões de desenvolvimento
 
-Contexto da Aula 2, revisado por inspeção do repositório em 29/09/2026.
+Padrões de desenvolvimento para o monólito modular FastAPI e sua Web UI integrada.
 
 ## Fontes e limites
 
@@ -95,9 +95,9 @@ Usar HTMX para interações localizadas, como executar coleta, atualizar timelin
 
 ## Testes e evidências
 
-A base possui testes de configuração, health, readiness simulado e OpenAPI em [backend/tests](../backend/tests). Nesta revisão documental, eles foram inspecionados, não executados.
+A suíte em [backend/tests](../backend/tests) cobre configuração, health, OpenAPI, regras de negócio, providers, rotas Web/REST, fragmentos HTMX e fluxo completo com SQLite isolado. O teste PostgreSQL separado é opt-in e requer uma base dedicada.
 
-Na implementação funcional, validar o fluxo de análise até a timeline, TARGET único, concorrentes adicionados depois, perfil opcional, fallback de busca, identificação de mocks, deduplicação, filtros, falha parcial e preservação dos eventos. Tratar estados vazios, carregamento e erro na interface conforme a arquitetura.
+Validar o fluxo de análise até a timeline, TARGET único, concorrentes adicionados depois, perfil opcional, fallback de busca, identificação de mocks, deduplicação, filtros, falha parcial e preservação dos eventos. Tratar estados vazios, carregamento e erro na interface conforme a arquitetura.
 
 Usar mocks para isolar fontes externas nos testes. Validar persistência real separadamente; testes com sessões simuladas não comprovam integração com PostgreSQL. Registrar comandos, resultados e limitações, sem alegar sucesso em verificações não executadas.
 

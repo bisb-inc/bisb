@@ -1,0 +1,6 @@
+<div class="border-l-2 {% if result.status == 'success' %}border-success{% elif result.status == 'partial' %}border-warning{% else %}border-danger{% endif %} pl-3 py-1" role="status">
+  <p class="text-sm font-semibold">{% if result.status == 'success' %}Coleta concluída{% elif result.status == 'partial' %}Coleta parcial{% else %}Falha na coleta{% endif %}</p>
+  <p class="mt-1 text-xs leading-5 text-muted">{{ result.persisted }} evento(s) novo(s) persistido(s) de {{ result.fetched }} recebido(s).</p>
+  {% if result.providers %}<ul class="mt-2 space-y-1">{% for outcome in result.providers %}<li class="text-xs text-muted">{{ outcome.source.value }} · empresa {{ outcome.company_id }}: {{ 'ok' if outcome.status == 'success' else 'falha' }}{% if outcome.error %} — {{ outcome.error }}{% endif %}</li>{% endfor %}</ul>{% endif %}
+</div>
+<div id="timeline" hx-swap-oob="innerHTML">{% include "partials/timeline.html" %}</div>
