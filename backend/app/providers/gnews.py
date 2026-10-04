@@ -34,6 +34,8 @@ class GNewsProvider:
 
     def fetch(self, company: Company, start: datetime, end: datetime) -> list[NormalizedEvent]:
         query = company.effective_search_term.strip()
+        # Keep the entire term literal, including quotes and query operators.
+        query = '"' + query.replace("\\", "\\\\").replace('"', '\\"') + '"'
         if len(query) > GNEWS_MAX_QUERY_LENGTH:
             raise ValueError(
                 f"O termo de busca do GNews deve ter até {GNEWS_MAX_QUERY_LENGTH} caracteres"
@@ -41,6 +43,7 @@ class GNewsProvider:
 
         params = {
             "q": query,
+            "in": "title,description",
             "from": self._format_datetime(start),
             # GNews treats `to` as inclusive; the domain interval is end-exclusive.
             "to": self._format_datetime(end - timedelta(microseconds=1)),
