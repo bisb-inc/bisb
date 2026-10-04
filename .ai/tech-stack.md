@@ -21,10 +21,9 @@ Referência técnica do projeto. Prioridade: [arquitetura oficial](../docs/arqui
 | Web UI — renderização | Jinja2 e HTML5, renderizados pelo próprio FastAPI | Implementado/configurado |
 | Web UI — estilização | Tailwind CSS compilado para CSS estático | Implementado/configurado |
 | Web UI — interações | HTMX local; JavaScript vanilla apenas quando necessário | Implementado/configurado |
-| Notícias | Mock GNEWS; integração real GNews ou equivalente | Mock implementado; provider real pendente |
+| Notícias | GNews real quando `GNEWS_API_KEY` está configurada; mock como fallback local | GNews implementado; chave fornecida pelo ambiente |
 | X/Twitter | Mock X; X Provider real opcional conforme viabilidade | Mock implementado; provider real pendente |
 | Assets da Web UI | Compilação Tailwind e cópia local de HTMX por ferramentas npm | Implementado/configurado |
-| Provider real de notícias | Escolha definitiva entre GNews ou equivalente | Pendente de decisão |
 | API do X | Viabilidade de acesso e uso da integração real | Pendente de decisão |
 | Período padrão da coleta | 7 dias é apenas uma proposta | Pendente de decisão |
 
@@ -94,7 +93,7 @@ A execução local é requisito do MVP. Implantação/deploy permanece fora do e
 ## Pendências do grupo
 
 - Período padrão de coleta; 7 dias ainda não confirmado.
-- Escolha do provider de notícias e viabilidade do X real; credenciais e limites operacionais quando aplicáveis.
+- Plano/limites operacionais do GNews; viabilidade e credenciais do X real.
 - Contratos e validações pendentes em [business-rules.md](business-rules.md).
 - Cenário final de demonstração; bancos digitais permanece uma sugestão estratégica.
 

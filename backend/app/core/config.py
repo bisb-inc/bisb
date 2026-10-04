@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     app_name: str = "Competitive Monitor"
     environment: str = "development"
     database_url: SecretStr
+    gnews_api_key: SecretStr | None = None
     log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = "INFO"
 
     @field_validator("database_url")

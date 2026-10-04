@@ -45,6 +45,7 @@ Não execute os dois modos simultaneamente: ambos usam o mesmo volume e publicam
 | `ENVIRONMENT` | Ambiente; padrão `development` |
 | `LOG_LEVEL` | Nível de log; padrão `INFO` |
 | `DATABASE_URL` | URL PostgreSQL `postgresql+psycopg://`; obrigatória |
+| `GNEWS_API_KEY` | Chave opcional; quando configurada, ativa notícias reais do GNews. Mantenha-a somente no `.env` local. |
 | `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB` | Inicialização do banco pelo Compose |
 
 A aplicação lê `backend/.env`; variáveis do processo têm prioridade. Mantenha a URL consistente com as credenciais usadas para inicializar o volume. Alterar os valores no `.env` não altera usuários/senhas de um volume já criado. Os valores do `.env.example` destinam-se somente ao desenvolvimento local.
@@ -57,7 +58,9 @@ A aplicação lê `backend/.env`; variáveis do processo têm prioridade. Manten
 4. Informe as datas inicial/final na coleta e execute-a. Nenhum período padrão é imposto.
 5. Consulte e filtre a timeline por empresa, fonte e intervalo.
 
-O projeto implementa `MockNewsProvider` (fonte `GNEWS`) e `MockXProvider` (fonte `X`). Eles funcionam sem credenciais externas, retornam um acontecimento previsível dentro do intervalo informado e persistem `is_mock=true`. A interface marca cada resultado como **Demonstração · mock**. Repetir a coleta não duplica eventos com a mesma empresa, fonte e URL. Providers reais GNews/X ainda não estão integrados.
+Quando `GNEWS_API_KEY` estiver configurada em `backend/.env`, `GNewsProvider` consulta notícias reais. A chave é enviada no cabeçalho `X-Api-Key`, não na URL; a busca usa o `search_term` da empresa (ou seu nome como fallback) e o intervalo informado na coleta. O provider normaliza título, descrição, URL e data de publicação e persiste `is_mock=false`. O GNews fornece até 10 resultados por consulta nesta implementação. As requisições são espaçadas para respeitar o limite de uma requisição por segundo documentado para o plano gratuito. Veja a [autenticação](https://docs.gnews.io/authentication), o [endpoint de busca](https://docs.gnews.io/endpoints/search-endpoint) e os [limites e erros](https://docs.gnews.io/error-handling).
+
+Sem `GNEWS_API_KEY`, `MockNewsProvider` (fonte `GNEWS`) continua ativo. `MockXProvider` (fonte `X`) permanece ativo em qualquer configuração. Os mocks funcionam sem credenciais, produzem conteúdo previsível dentro do intervalo informado e persistem `is_mock=true`; a interface os identifica como **Demonstração · mock**. Se a chamada real ao GNews falhar, a coleta informa falha para essa fonte em vez de substituir silenciosamente o resultado por um mock; o provider X mockado continua sendo tentado. Repetir a coleta não duplica eventos com a mesma empresa, fonte e URL.
 
 A coleta tenta cada provider para cada empresa e persiste cada resultado bem-sucedido independentemente das demais tentativas. A resposta REST informa `success`, `partial` ou `failure` e o estado por fonte/empresa.
 

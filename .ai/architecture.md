@@ -73,14 +73,14 @@ A API planejada cobre criação/listagem/consulta de análises, adição/remoç�
 - Entidades `Analysis`, `Company`, `AnalysisCompany` e `Event`, TARGET único por análise, índice de deduplicação e migração Alembic.
 - Application / Services compartilhados por Web Routes e REST API Routes, sem HTTP interno à própria API.
 - Web UI Jinja2 com abas Monitoramento e Perfil da empresa, HTMX local e Tailwind compilado localmente.
-- Providers mockados para notícias e X, coleta com falha parcial, persistência de eventos e timeline com filtros.
+- Provider real GNews opcional via `GNEWS_API_KEY`, mocks para notícias/X sem chave e coleta com falha parcial, persistência de eventos e timeline com filtros.
 - Aplicação FastAPI e PostgreSQL via Compose, testes funcionais com SQLite isolado e teste opt-in de fluxo Web UI com PostgreSQL real.
 
 O diretório `frontend/` contém documentação da interface; o código Web UI está em `backend/app/web/` e os assets servidos em `backend/app/static/`.
 
 ## Planejado para o MVP — pendente de integração
 
-- Provider real definitivo de notícias (GNews ou equivalente).
+- Plano e limites operacionais da integração GNews para além do uso local atual.
 - Provider real do X, condicionado à viabilidade de acesso.
 
 O fluxo mockado local não depende dessas integrações. Comandos e evidências verificadas estão no [README do backend](../backend/README.md); não confundir código planejado com integração externa validada.
@@ -97,4 +97,4 @@ A visão estratégica reserva V2 para enriquecimento automático do perfil, V3 p
 
 - Período padrão de coleta pendente; 7 dias é somente uma proposta.
 - Contratos detalhados, validações e decisões operacionais ainda não especificados estão listados em [business-rules.md](business-rules.md).
-- Escolha do provider de notícias e viabilidade dos providers reais, incluindo acesso ao X. Providers mockados compatíveis devem permitir o fluxo completo sem integrações externas.
+- Viabilidade do provider real do X. O GNews real é opcional por configuração; providers mockados compatíveis mantêm o fluxo completo sem credenciais externas.

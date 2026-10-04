@@ -1,7 +1,7 @@
 from datetime import date
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query, Response, status
+from fastapi import APIRouter, Depends, Query, Request, Response, status
 from sqlalchemy.orm import Session
 
 from app.db.session import get_session
@@ -70,9 +70,18 @@ def edit_company(
 
 @router.post("/analyses/{analysis_id}/collect", response_model=CollectionResult)
 def collect(
-    analysis_id: int, data: CollectionRequest, session: Annotated[Session, Depends(get_session)]
+    request: Request,
+    analysis_id: int,
+    data: CollectionRequest,
+    session: Annotated[Session, Depends(get_session)],
 ):
-    return collect_analysis(session, analysis_id, data.from_date, data.to_date)
+    return collect_analysis(
+        session,
+        analysis_id,
+        data.from_date,
+        data.to_date,
+        providers=request.app.state.source_providers,
+    )
 
 
 @router.get("/analyses/{analysis_id}/events", response_model=list[EventRead])

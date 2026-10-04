@@ -250,7 +250,13 @@ def collect_form(
             detail="A data inicial deve ser anterior ou igual à data final",
         )
     data = CollectionRequest(from_date=from_date, to_date=to_date)
-    result = collect_analysis(session, analysis_id, data.from_date, data.to_date)
+    result = collect_analysis(
+        session,
+        analysis_id,
+        data.from_date,
+        data.to_date,
+        providers=request.app.state.source_providers,
+    )
     analysis = get_analysis(session, analysis_id)
     events = analysis_events(session, analysis_id)
     template = "partials/collection_response.html"

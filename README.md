@@ -13,7 +13,7 @@ Criar análise
 → consultar timeline comparativa
 ```
 
-O fluxo funciona localmente com providers mockados, sem credenciais externas. Providers reais podem ser adicionados, mas não são necessários para a demonstração. Perfil e `search_term` são opcionais; sem termo explícito, usa-se o nome da empresa.
+O fluxo funciona localmente sem depender de credenciais externas: notícias usam GNews real quando `GNEWS_API_KEY` está configurada e usam mock quando não está; X permanece mockado. Perfil e `search_term` são opcionais; sem termo explícito, usa-se o nome da empresa.
 
 ## Arquitetura
 
@@ -50,11 +50,12 @@ O fluxo funcional do MVP está implementado no código atual:
 - REST API para análises, empresas, coleta e eventos;
 - Web UI para criar/listar análises, manter concorrentes, editar perfil/termo de busca, executar coleta e consultar timeline;
 - Filtros por empresa, fonte e período; ordenação por `published_at DESC` e `collected_at DESC`;
-- Mock Providers de notícias (`GNEWS`) e X, sem credenciais externas, com identificação `is_mock` na interface;
+- Provider real GNews ativado por `GNEWS_API_KEY`, com fallback mock quando a chave não está configurada; provider X permanece mockado;
+- Identificação `is_mock` na interface, com resultados reais e mockados claramente diferenciados;
 - Falha total/parcial por provider sem descartar resultados bem-sucedidos;
 - Templates Jinja2, Tailwind CSS compilado e HTMX local.
 
-Providers reais GNews/X não estão integrados. O período é informado em cada coleta; o grupo não definiu período padrão. Autenticação, autorização, IA, workers, filas, alertas e funcionalidades V2–V5 continuam fora do MVP.
+O provider real do X não está integrado. O período é informado em cada coleta; o grupo não definiu período padrão. Autenticação, autorização, IA, workers, filas, alertas e funcionalidades V2–V5 continuam fora do MVP.
 
 ## Executar localmente
 
@@ -144,7 +145,7 @@ A gravação do vídeo e a escolha final do cenário de apresentação continuam
 
 ## Pendências atuais
 
-- Provider real definitivo de notícias e viabilidade do X Provider real;
+- Viabilidade do X Provider real;
 - contratos/validações não definidos pela arquitetura e contexto operacional;
 - período padrão da coleta, que não é imposto pelo código;
 - cenário final da demonstração.
