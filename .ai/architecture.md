@@ -1,104 +1,70 @@
-# Contexto de arquitetura — MVP funcional
+# Contexto de arquitetura
 
-Revisão documental de 29/09/2026. Fonte principal: [arquitetura oficial da Aula 1](../docs/arquitetura.md); referência estratégica: [discovery e roadmap](../competitive_monitor_mvp.md). A inspeção do repositório determina o estado de implementação, não redefine o escopo.
+Contexto operacional para agentes que trabalham no repositório. Fonte principal: [arquitetura oficial](../docs/arquitetura.md); visão e roadmap: [competitive_monitor_mvp.md](../competitive_monitor_mvp.md). O código em `backend/` é a evidência do estado atual; este arquivo descreve o que **já existe**, para que não seja reimplementado.
 
 ## Produto e hipótese
 
-O Competitive Monitor acompanha uma empresa-alvo e seus concorrentes em uma timeline única de notícias e publicações do X/Twitter.
+O Competitive Monitor acompanha uma empresa-alvo (`TARGET`) e seus concorrentes (`COMPETITOR`) em uma timeline única de notícias e publicações do X/Twitter.
 
-Hipótese a validar: “Dada uma empresa-alvo e uma lista de concorrentes definida pelo analista, é possível coletar acontecimentos de diferentes fontes, normalizá-los, persistir os resultados e apresentá-los em uma timeline comparativa.”
+Hipótese: “Dada uma empresa-alvo e uma lista de concorrentes definida pelo analista, é possível coletar acontecimentos de diferentes fontes, normalizá-los, persistir os resultados e apresentá-los em uma timeline comparativa.”
 
-A solução permanece deliberadamente pequena. O único perfil funcional é Analista; não há autenticação, autorização ou entidade de usuário.
+Perfil funcional único: Analista. Não há autenticação, autorização ou entidade de usuário.
 
-## Componentes e responsabilidades planejadas
+## Componentes implementados
 
-O MVP é um **monólito modular FastAPI**, com Web UI e REST API como duas interfaces para os mesmos serviços. Não há aplicação frontend independente.
+Monólito modular FastAPI. Web UI e REST API são duas interfaces para os mesmos serviços; não há frontend independente.
 
-| Componente | Responsabilidade no MVP |
-| --- | --- |
-| Web UI | Renderizada pelo FastAPI com Jinja2 e HTML5, estilizada com Tailwind CSS e interativa com HTMX; JavaScript vanilla apenas quando necessário |
-| Web Routes | Receber navegação, formulários e requisições HTMX; chamar diretamente os serviços e retornar páginas completas ou fragmentos HTML |
-| REST API Routes | Preservar os endpoints REST oficiais e retornar contratos HTTP/API, utilizando a mesma camada de serviços |
-| Application / Services | Concentrar a coordenação das regras de negócio, coleta e persistência, compartilhada por Web Routes e API Routes |
-| PostgreSQL | Persistir Analysis, Company, AnalysisCompany e Event |
-| Source Providers | Consultar notícias/X ou gerar dados mockados, retornando resultados normalizados para o domínio |
+| Componente | Local | Responsabilidade |
+| --- | --- | --- |
+| Web Routes | `app/web/routes.py` | Navegação, formulários e HTMX; retornam páginas ou fragmentos Jinja2 |
+| Templates | `app/web/templates/` (`workspace/`, `partials/`) | Apresentação; sem regra de negócio nem acesso ao banco |
+| REST API Routes | `app/api/routes/` | Contratos REST oficiais e da extensão de análise |
+| Application / Services | `app/services/` | Análises, empresas, coleta, eventos e análise de eventos |
+| Modelos e persistência | `app/models.py`, `app/db/`, `migrations/` | SQLAlchemy síncrono, PostgreSQL e Alembic |
+| SourceProvider | `app/providers/base.py`, `gnews.py`, `mock.py` | `fetch(company, start, end)` → eventos normalizados |
+| AnalysisProvider | `app/providers/analysis.py` | Gemini ou mock para enriquecer um `Event` |
+| Configuração | `app/core/config.py` | Pydantic Settings; segredos como `SecretStr` |
 
-Web Routes e REST API Routes chamam diretamente Application / Services. **Web Routes/Jinja2 não devem chamar a própria REST API via HTTP interno apenas para reutilizar lógica.** Os serviços coordenam banco e providers; contratos externos ficam isolados nos providers. Diagramas e endpoints oficiais estão em [docs/arquitetura.md](../docs/arquitetura.md).
+Web Routes e REST API Routes chamam diretamente os serviços. **Nunca fazer HTTP interno para a própria REST API.** Contratos externos ficam isolados nos providers.
 
-A interface planejada possui abas Monitoramento e Perfil da empresa para criar/consultar análises, manter concorrentes, editar perfil manual e `search_term`, executar coleta e consultar timeline com filtros. Deve identificar visualmente eventos mockados e preservar navegação por teclado, foco visível, responsividade e estados de carregamento, vazio e erro.
+Seleção de providers, feita em `create_app`:
 
-## Fluxo funcional completo
+- notícias: `GNewsProvider` quando `GNEWS_API_KEY` não está vazia; caso contrário, `MockNewsProvider` (fonte `GNEWS`, `is_mock=true`);
+- X: `MockXProvider` sempre; não existe provider real do X;
+- análise: `ANALYSIS_PROVIDER=gemini` → `GeminiAnalysisProvider`; `mock` → `MockAnalysisProvider`. Não há fallback automático entre eles.
 
-1. O analista cria uma análise com exatamente uma empresa-alvo.
-2. Informa concorrentes manualmente, na criação ou depois. A demonstração completa exige ao menos um concorrente.
-3. Opcionalmente preenche perfil básico e `search_term`; sem termo informado, a coleta usa o nome da empresa.
-4. Aciona a coleta das empresas vinculadas à análise.
-5. O backend consulta providers de notícias e X, reais ou mockados.
-6. Os providers normalizam os resultados para o domínio; o backend persiste `Event`, identifica mocks e evita duplicações básicas.
-7. Se uma fonte falhar, preserva os resultados das demais e informa o status por fonte.
-8. O analista consulta a timeline da análise e filtra por empresa, fonte e período.
+## Web UI implementada
 
-O perfil manual não bloqueia a coleta. Integrações reais não são obrigatórias: providers mockados compatíveis devem permitir execução local e demonstração quando credenciais, custo ou disponibilidade impedirem o acesso externo.
+- **Lista de análises** (`/ui/analyses`) com a ação **Nova análise**.
+- **Wizard** (`/ui/analyses/new`) em cinco etapas: Análise → Empresa principal / TARGET → Concorrentes → Período → Revisão. O estado do rascunho trafega no campo `wizard_state` e só é persistido na confirmação. **Criar e analisar** cria a análise, executa a coleta inicial e redireciona para a Visão geral. O wizard exige ao menos um concorrente.
+- **Workspace** (`/ui/analyses/{id}?view=overview|timeline|companies`):
+  - **Visão geral**: contador de acontecimentos, distribuição de eventos por empresa e até cinco destaques. Os destaques priorizam eventos com análise Gemini, ordenados por relevância; sem ela, usam recência. A tela também traz o formulário de coleta (**Atualizar monitoramento**).
+  - **Timeline**: filtros por empresa, fonte e período via HTMX, com URL navegável (`HX-Push-Url`). Mostra mocks identificados, link para a fonte original e **Analisar com IA** por evento.
+  - **Empresas**: TARGET e concorrentes, com link para o Setup.
+- **Setup** (`/ui/analyses/{id}/setup`): nome da análise, adição/remoção de concorrentes, nome/site, perfil manual e `search_term` de cada empresa.
 
-### Fluxo da Web UI com Jinja2 e HTMX
+Os parâmetros antigos `?tab=profile` e `?tab=monitoring` apenas redirecionam para Setup e Timeline; as antigas abas “Monitoramento” e “Perfil da empresa” não existem mais.
 
-Browser → Web Route → Application / Service → banco/providers → Web Route → página ou fragmento Jinja2 retornado ao Browser.
+## Fluxos
 
-HTMX é utilizado desde o início para executar coleta, aplicar filtros, adicionar/remover concorrentes e atualizar partes relevantes da interface quando isso simplificar a experiência. As requisições chegam a Web Routes dedicadas a respostas HTML completas ou parciais. A renderização permanece no servidor; a aplicação não se torna uma SPA.
+**Coleta:** Web Route ou API → `collect_analysis` → para cada empresa e cada provider, `fetch` com o intervalo UTC. Cada par empresa/provider tem commit próprio, com deduplicação por `(company_id, source, url)`. Falha de um provider gera rollback apenas daquele par e é registrada no resultado (`success`/`partial`/`failure`). Erro do GNews real não troca para mock.
 
-Clientes REST acessam as API Routes oficiais, que reutilizam os mesmos serviços e retornam contratos de API em vez de HTML.
+**Período:** cada coleta recebe `from_date`/`to_date`. Os presets da Web UI (1 semana, 1 mês, 3 meses, Personalizado) são convertidos em datas concretas nas Web Routes. Não há período persistido em `Analysis` nem padrão de domínio.
 
-## Critério de aceite do MVP
+**Análise de evento (extensão pós-MVP):** ação explícita → `analyze_event` → `AnalysisProvider.analyze` → saída validada por `EventAnalysisContent` → `EventAnalysis` (1:1 com `Event`). O resultado existente é reutilizado; `force=true` reanalisa e só substitui após resposta válida. Nunca roda na coleta ou no carregamento da timeline.
 
-O MVP funcional é considerado concluído quando o Analista consegue:
+## Critério de aceite do MVP base
 
-1. Criar uma análise.
-2. Informar exatamente uma empresa `TARGET`.
-3. Ter ao menos um `COMPETITOR` para validar o fluxo competitivo.
-4. Executar uma coleta usando providers reais ou mockados.
-5. Normalizar e persistir os eventos por meio do sistema.
-6. Consultar a timeline da análise.
+O Analista cria uma análise, define exatamente um `TARGET`, tem ao menos um `COMPETITOR`, executa coleta com providers reais ou mockados, persiste os eventos e consulta a timeline com filtros. Perfil manual e `search_term` são opcionais. A análise por IA não faz parte desse critério.
 
-O perfil manual e `search_term` são opcionais e não bloqueiam esse fluxo. Quando o termo de busca não é informado, utiliza-se o nome da empresa.
+## Extensões implementadas após o MVP base
 
-## Domínio e API
+Docker Compose; GNews real com busca por frase exata; enriquecimento individual por Gemini (`EventAnalysis`); redesign da Web UI com wizard, Visão geral e Setup separado. Essas extensões estão implementadas e não devem ser tratadas como trabalho futuro.
 
-Preservar as quatro entidades e seus relacionamentos: `Analysis` reúne empresas por `AnalysisCompany`; `Company` pode participar de várias análises e possuir vários `Event`. O papel `TARGET` ou `COMPETITOR` pertence a `AnalysisCompany.role`.
+## Fora do escopo implementado
 
-A API planejada cobre criação/listagem/consulta de análises, adição/remoção de concorrentes, edição de empresa/perfil, coleta e consulta dos eventos. Usar a tabela oficial de endpoints, sem criar contratos paralelos neste contexto. Regras consolidadas: [business-rules.md](business-rules.md).
+X real, autenticação/autorização, agendamento, workers, filas, alertas, crawling, análise automática ou em lote por IA, monitoramento contínuo, descoberta/classificação de concorrentes, perfil automático, Mapa Competitivo, paginação e coordenação de coletas concorrentes. SPA, React, Vue, Next.js e frontend independente não fazem parte da arquitetura. Não antecipar o roadmap (V2–V5) sem nova decisão do grupo.
 
-### Extensão opcional pós-MVP base: enriquecimento de eventos
+## Limitações conhecidas
 
-O enriquecimento individual de um `Event` persistido está implementado como extensão posterior ao MVP base; a chamada real à Gemini ainda não foi validada neste ambiente. Uma camada `AnalysisProvider`, separada de `SourceProvider`, oferece Gemini e mock; `Application / Services` coordena a ação sob demanda, e `EventAnalysis` armazena o resultado 1:1 sem modificar o dado coletado. A coleta e a visualização da timeline não dependem dessa integração. Não há análise automática, lote ou processamento em background. A REST API e a Web UI expõem a ação, com respostas estruturadas validadas e reanálise explícita.
-
-## Já implementado — evidências no repositório
-
-- Base FastAPI, configuração por ambiente, engine e sessões SQLAlchemy síncronas, health checks, OpenAPI e Swagger.
-- Entidades `Analysis`, `Company`, `AnalysisCompany` e `Event`, TARGET único por análise, índice de deduplicação e migração Alembic.
-- Application / Services compartilhados por Web Routes e REST API Routes, sem HTTP interno à própria API.
-- Web UI Jinja2 com abas Monitoramento e Perfil da empresa, HTMX local e Tailwind compilado localmente.
-- Provider real GNews opcional via `GNEWS_API_KEY`, mocks para notícias/X sem chave e coleta com falha parcial, persistência de eventos e timeline com filtros.
-- Aplicação FastAPI e PostgreSQL via Compose, testes funcionais com SQLite isolado e teste opt-in de fluxo Web UI com PostgreSQL real.
-
-O diretório `frontend/` contém documentação da interface; o código Web UI está em `backend/app/web/` e os assets servidos em `backend/app/static/`.
-
-## Planejado para o MVP — pendente de integração
-
-- Plano e limites operacionais da integração GNews para além do uso local atual.
-- Provider real do X, condicionado à viabilidade de acesso.
-
-O fluxo mockado local não depende dessas integrações. Comandos e evidências verificadas estão no [README do backend](../backend/README.md); não confundir código planejado com integração externa validada.
-
-## Fora do MVP e roadmap
-
-Mapa Competitivo, crawling completo, perfil automático, descoberta/classificação de concorrentes, análise automática/em lote por IA, alertas, workers, filas e processamento contínuo ficam fora do MVP base. O enriquecimento individual de eventos foi implementado posteriormente como extensão opcional, sem alterar o critério de aceite original. Autenticação e autorização também estão excluídas; não são dependências do MVP.
-
-SPA, React, Vue, Next.js e aplicação frontend independente não fazem parte da arquitetura adotada.
-
-A visão estratégica reserva V2 para enriquecimento automático do perfil, V3 para descoberta/classificação, V4 para IA e V5 para monitoramento contínuo/alertas. Nenhuma dessas versões deve ser antecipada nesta entrega.
-
-## Pendências do produto e da arquitetura
-
-- Período padrão de coleta pendente; 7 dias é somente uma proposta.
-- Contratos detalhados, validações e decisões operacionais ainda não especificados estão listados em [business-rules.md](business-rules.md).
-- Viabilidade do provider real do X. O GNews real é opcional por configuração; providers mockados compatíveis mantêm o fluxo completo sem credenciais externas.
+As limitações da implementação atual estão registradas em [backend/README.md](../backend/README.md#limitações-conhecidas): o contador inicial da Visão geral, a resposta HTMX da coleta e o teste PostgreSQL opt-in desatualizado. Não são decisões arquiteturais pendentes.

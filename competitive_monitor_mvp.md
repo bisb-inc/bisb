@@ -11,7 +11,7 @@ Referências do projeto:
 - [Prompt de geração de contexto — Aula 2](prompts/context-generation.md).
 - [Prompt de implementação — Aula 2](prompts/implementation.md).
 
-A base técnica do backend já existe; as funcionalidades de negócio e o frontend ainda serão implementados. O planejamento abaixo não deve ser interpretado como registro de funcionalidades entregues.
+Este documento registra o **planejamento feito antes da implementação**: problema, recorte do MVP, roadmap e organização do grupo. O que foi efetivamente implementado, incluindo as extensões posteriores ao MVP base, está descrito no [README](README.md) e na [arquitetura oficial](docs/arquitetura.md). As seções de divisão do grupo e fases de trabalho preservam o plano original e não são um registro de execução.
 
 ## 1. Objetivo do projeto
 
@@ -124,6 +124,8 @@ Exemplo:
 
 Os resultados serão convertidos para um formato comum da aplicação.
 
+> **Situação implementada:** `GNewsProvider` consulta a GNews API quando `GNEWS_API_KEY` está configurada, enviando o termo como frase exata. Sem a chave, um mock de notícias mantém o fluxo demonstrável.
+
 ---
 
 ## 3.4 Coleta de publicações no X/Twitter
@@ -137,6 +139,8 @@ A implementação poderá utilizar:
 
 O MVP não depende da API do X para funcionar. Eventos mockados são identificados por `is_mock` e devem ser reconhecíveis na apresentação dos resultados.
 
+> **Situação implementada:** o X usa `MockXProvider`. A integração real não foi implementada.
+
 A coleta mantém a deduplicação básica de eventos. Se um provider falhar, as demais fontes continuam, com indicação do status de cada fonte. As regras técnicas estão na [arquitetura oficial](docs/arquitetura.md).
 
 ---
@@ -145,7 +149,7 @@ A coleta mantém a deduplicação básica de eventos. Se um provider falhar, as 
 
 A principal visualização do sistema será uma timeline comparativa consolidada das empresas vinculadas à análise.
 
-Exemplo ilustrativo, com acontecimentos fictícios. O período padrão de 7 dias ainda depende de confirmação do grupo:
+Exemplo ilustrativo, com acontecimentos fictícios. Na implementação, o período é escolhido a cada coleta, com presets de 1 semana, 1 mês e 3 meses ou datas personalizadas:
 
 ```text
 Competitive Monitor
@@ -212,6 +216,8 @@ As funcionalidades abaixo **não fazem parte do MVP**. Algumas representam possi
 - Processamento contínuo em background.
 
 O MVP possui apenas o perfil funcional de **Analista**. Autenticação, autorização e múltiplos níveis de acesso estão fora do escopo.
+
+Depois do MVP base, foi implementada uma extensão opcional de análise individual de eventos por IA (Gemini), com categoria, intensidade de impacto e relevância. Ela não integra o escopo nem o critério de aceite do MVP; a análise em lote, automática ou de tese de investimento continua fora da implementação.
 
 O objetivo é garantir que o MVP seja **pequeno, implementável e demonstrável**.
 
@@ -297,6 +303,8 @@ Possíveis classificações:
 
 A evolução seguinte poderá utilizar modelos de linguagem para enriquecer os eventos já normalizados no MVP com resumos, categorias e avaliação de impacto.
 
+Uma parte limitada desta visão foi implementada como **extensão pós-MVP**: o analista pode pedir, para um evento por vez, uma análise Gemini com resumo, categoria, intensidade do impacto, sentimento, relevância e justificativa. O exemplo abaixo continua representando a visão futura mais ampla (evidências e confiança não fazem parte da extensão implementada).
+
 Exemplo:
 
 ```text
@@ -343,7 +351,7 @@ flowchart TD
 
 A solução combina uma aplicação web, backend REST, banco de dados e providers de fontes externas. Essa separação permite evoluir as integrações sem concentrar suas particularidades na interface ou nas regras do produto.
 
-O diagrama de componentes e as tecnologias confirmadas estão na [arquitetura oficial](docs/arquitetura.md). O framework de frontend permanece a definir pelo grupo.
+O diagrama de componentes e as tecnologias adotadas estão na [arquitetura oficial](docs/arquitetura.md). A interface foi definida como Web UI server-rendered pelo próprio FastAPI, com Jinja2, Tailwind CSS e HTMX, sem aplicação frontend independente.
 
 ---
 
@@ -368,7 +376,7 @@ O diagrama de entidades e relacionamentos é mantido em [docs/arquitetura.md](do
 
 # 9. Capacidades da API
 
-A API dará suporte à criação e consulta de análises, à manutenção de concorrentes e perfis, à execução da coleta e à consulta dos eventos com filtros.
+A API dá suporte à criação e consulta de análises, à manutenção de concorrentes e perfis, à execução da coleta e à consulta dos eventos com filtros.
 
 A lista oficial de endpoints está em [docs/arquitetura.md](docs/arquitetura.md). Este documento não mantém uma segunda definição dos contratos REST.
 
@@ -541,127 +549,127 @@ Algumas atividades deverão ser feitas em conjunto. As listas abaixo preservam a
 
 ## Definição
 
-- [ ] Aprovar escopo final do MVP;
-- [ ] Definir o framework do frontend e revisar as tecnologias já confirmadas na arquitetura;
-- [ ] Escolher cenário utilizado na demonstração;
-- [ ] Aprovar entidades;
-- [ ] Aprovar endpoints.
+- Aprovar escopo final do MVP;
+- Definir o framework do frontend e revisar as tecnologias já confirmadas na arquitetura;
+- Escolher cenário utilizado na demonstração;
+- Aprovar entidades;
+- Aprovar endpoints.
 
 ## Contexto para IA
 
-- [ ] Revisar `.ai/standards.md`;
-- [ ] Revisar `.ai/architecture.md`;
-- [ ] Revisar `.ai/tech-stack.md`;
-- [ ] Revisar `.ai/business-rules.md`.
+- Revisar `.ai/standards.md`;
+- Revisar `.ai/architecture.md`;
+- Revisar `.ai/tech-stack.md`;
+- Revisar `.ai/business-rules.md`.
 
 ## Finalização
 
-- [ ] Testar fluxo completo;
-- [ ] Corrigir bugs;
-- [ ] Revisar documentação;
-- [ ] Garantir que repositório esteja público;
-- [ ] Preparar dados de demonstração;
-- [ ] Gravar vídeo;
-- [ ] Revisar entregáveis.
+- Testar fluxo completo;
+- Corrigir bugs;
+- Revisar documentação;
+- Garantir que repositório esteja público;
+- Preparar dados de demonstração;
+- Gravar vídeo;
+- Revisar entregáveis.
 
 ---
 
-# 14. Checklist de planejamento
+# 14. Fases do plano de trabalho
 
-As fases organizam as entregas do projeto. A base do backend já foi iniciada; os itens não assinalados não significam necessariamente ausência de trabalho realizado. O estado técnico atual deve ser consultado na arquitetura oficial e no README.
+As fases abaixo registram como o grupo planejou organizar as entregas no início do projeto. Não são uma lista de pendências: o estado implementado e as pendências reais estão no [README](README.md).
 
 ## Fase 1 — Definição
 
-- [ ] Definir nome definitivo do projeto;
-- [ ] Fechar escopo do MVP;
-- [ ] Definir o framework do frontend e revisar as tecnologias já confirmadas na arquitetura;
-- [ ] Definir entidades;
-- [ ] Definir endpoints;
-- [ ] Criar diagrama de arquitetura;
-- [ ] Criar diagrama ER;
-- [ ] Definir fluxo principal.
+- Definir nome definitivo do projeto;
+- Fechar escopo do MVP;
+- Definir o framework do frontend e revisar as tecnologias já confirmadas na arquitetura;
+- Definir entidades;
+- Definir endpoints;
+- Criar diagrama de arquitetura;
+- Criar diagrama ER;
+- Definir fluxo principal.
 
 ---
 
 ## Fase 2 — Contexto para IA
 
-- [ ] Criar `.ai/standards.md`;
-- [ ] Criar `.ai/architecture.md`;
-- [ ] Criar `.ai/tech-stack.md`;
-- [ ] Criar `.ai/business-rules.md`;
-- [ ] Criar prompt de geração de contexto;
-- [ ] Criar prompt de implementação;
-- [ ] Registrar ferramentas utilizadas.
+- Criar `.ai/standards.md`;
+- Criar `.ai/architecture.md`;
+- Criar `.ai/tech-stack.md`;
+- Criar `.ai/business-rules.md`;
+- Criar prompt de geração de contexto;
+- Criar prompt de implementação;
+- Registrar ferramentas utilizadas.
 
 ---
 
 ## Fase 3 — Backend
 
-- [ ] Criar projeto backend;
-- [ ] Configurar banco;
-- [ ] Implementar `Analysis`;
-- [ ] Implementar `Company`;
-- [ ] Implementar `AnalysisCompany`;
-- [ ] Implementar `Event`;
-- [ ] Implementar endpoints REST;
-- [ ] Implementar fluxo de coleta.
+- Criar projeto backend;
+- Configurar banco;
+- Implementar `Analysis`;
+- Implementar `Company`;
+- Implementar `AnalysisCompany`;
+- Implementar `Event`;
+- Implementar endpoints REST;
+- Implementar fluxo de coleta.
 
 ---
 
 ## Fase 4 — Integrações
 
-- [ ] Definir interface `SourceProvider`;
-- [ ] Implementar `GNewsProvider` ou equivalente;
-- [ ] Testar consultas;
-- [ ] Avaliar API do X;
-- [ ] Implementar `XProvider` ou `MockXProvider`;
-- [ ] Normalizar resultados;
-- [ ] Persistir eventos.
+- Definir interface `SourceProvider`;
+- Implementar `GNewsProvider` ou equivalente;
+- Testar consultas;
+- Avaliar API do X;
+- Implementar `XProvider` ou `MockXProvider`;
+- Normalizar resultados;
+- Persistir eventos.
 
 ---
 
 ## Fase 5 — Frontend
 
-- [ ] Tela de análises;
-- [ ] Criar análise;
-- [ ] Cadastrar e remover concorrentes;
-- [ ] Editar perfil básico manual e termo de busca;
-- [ ] Página da análise;
-- [ ] Botão para executar coleta;
-- [ ] Timeline;
-- [ ] Filtro por empresa;
-- [ ] Filtro por fonte;
-- [ ] Filtro por período;
-- [ ] Identificar eventos mockados;
-- [ ] Integração com backend.
+- Tela de análises;
+- Criar análise;
+- Cadastrar e remover concorrentes;
+- Editar perfil básico manual e termo de busca;
+- Página da análise;
+- Botão para executar coleta;
+- Timeline;
+- Filtro por empresa;
+- Filtro por fonte;
+- Filtro por período;
+- Identificar eventos mockados;
+- Integração com backend.
 
 ---
 
 ## Fase 6 — Integração
 
-- [ ] Testar criação da análise;
-- [ ] Testar cadastro de concorrentes;
-- [ ] Testar coleta;
-- [ ] Testar persistência;
-- [ ] Testar timeline;
-- [ ] Tratar estados vazios;
-- [ ] Tratar falhas parciais dos providers;
-- [ ] Validar deduplicação básica;
-- [ ] Confirmar coleta com perfil não preenchido.
+- Testar criação da análise;
+- Testar cadastro de concorrentes;
+- Testar coleta;
+- Testar persistência;
+- Testar timeline;
+- Tratar estados vazios;
+- Tratar falhas parciais dos providers;
+- Validar deduplicação básica;
+- Confirmar coleta com perfil não preenchido.
 
 ---
 
 ## Fase 7 — Entrega
 
-- [ ] Revisar documento de arquitetura;
-- [ ] Conferir diretório `.ai/`;
-- [ ] Conferir prompts;
-- [ ] Criar README;
-- [ ] Definir cenário da demo;
-- [ ] Criar dados de demonstração;
-- [ ] Publicar repositório;
-- [ ] Gravar vídeo de 3 a 10 minutos;
-- [ ] Revisar entregáveis finais.
+- Revisar documento de arquitetura;
+- Conferir diretório `.ai/`;
+- Conferir prompts;
+- Criar README;
+- Definir cenário da demo;
+- Criar dados de demonstração;
+- Publicar repositório;
+- Gravar vídeo de 3 a 10 minutos;
+- Revisar entregáveis finais.
 
 ---
 
@@ -684,18 +692,17 @@ Concorrentes:
 - PicPay
 ```
 
-Fluxo da demonstração:
+Roteiro sugerido para a demonstração, adaptado à interface implementada (o cenário final ainda será escolhido pelo grupo):
 
 1. Apresentar rapidamente o problema;
-2. Mostrar criação da análise;
-3. Mostrar empresa-alvo;
-4. Adicionar concorrentes;
-5. Mostrar o perfil básico manual opcional e o termo de busca;
-6. Executar coleta;
-7. Mostrar notícias e publicações, identificando os eventos mockados;
-8. Mostrar a timeline comparativa e filtrar por concorrente;
-9. Explicar rapidamente a arquitetura;
-10. Apresentar a evolução futura.
+2. Criar a análise no wizard: nome, empresa principal / TARGET e concorrentes, com termo de busca quando o nome for ambíguo;
+3. Escolher o período e confirmar **Criar e analisar**;
+4. Mostrar a **Visão geral** e o resultado da coleta inicial;
+5. Abrir a **Timeline**, filtrar por concorrente e fonte e identificar eventos reais e mockados;
+6. Mostrar o **Setup**, com o perfil básico manual opcional e o termo de busca;
+7. Opcionalmente, usar **Analisar com IA** em um evento, destacando que é uma extensão pós-MVP;
+8. Explicar rapidamente a arquitetura;
+9. Apresentar a evolução futura.
 
 ---
 

@@ -9,7 +9,7 @@ Referência técnica do projeto. Prioridade: [arquitetura oficial](../docs/arqui
 | Backend | Python 3.14, FastAPI e Uvicorn | Implementado/configurado |
 | Configuração | Pydantic Settings, variáveis de ambiente e arquivo local .env | Implementado/configurado |
 | Persistência — infraestrutura | PostgreSQL 16, SQLAlchemy síncrono e psycopg | Implementado/configurado |
-| Migrações | Alembic com revisão das entidades do MVP | Implementado/configurado |
+| Migrações | Alembic com revisões das entidades do MVP e de `EventAnalysis` | Implementado/configurado |
 | Dependências | uv, pyproject.toml e uv.lock | Implementado/configurado |
 | Testes da base | pytest e HTTPX/TestClient | Implementado/configurado |
 | Lint/formatação | Ruff | Implementado/configurado |
@@ -18,19 +18,17 @@ Referência técnica do projeto. Prioridade: [arquitetura oficial](../docs/arqui
 | Documentação | Markdown e Mermaid | Implementado/configurado |
 | Persistência de negócio | Modelos e migrações das entidades do MVP | Implementado/configurado |
 | Endpoints de negócio | API REST para análises, empresas, coleta e eventos | Implementado/configurado |
-| Enriquecimento opcional de eventos | Google GenAI SDK (`google-genai`), schema Pydantic estruturado e `EventAnalysis` | Implementado como extensão opcional; chamada real à Gemini ainda não validada neste ambiente |
+| Enriquecimento opcional de eventos | Google GenAI SDK (`google-genai`), schema Pydantic estruturado e `EventAnalysis` | Extensão pós-MVP implementada; Gemini validado em execução real |
 | Web UI — renderização | Jinja2 e HTML5, renderizados pelo próprio FastAPI | Implementado/configurado |
 | Web UI — estilização | Tailwind CSS compilado para CSS estático | Implementado/configurado |
 | Web UI — interações | HTMX local; JavaScript vanilla apenas quando necessário | Implementado/configurado |
-| Notícias | GNews real quando `GNEWS_API_KEY` está configurada; mock como fallback local | GNews implementado; chave fornecida pelo ambiente |
-| X/Twitter | Mock X; X Provider real opcional conforme viabilidade | Mock implementado; provider real pendente |
+| Notícias | GNews real quando `GNEWS_API_KEY` está configurada; mock sem a chave | Implementado; a chave é fornecida pelo `.env` local |
+| X/Twitter | `MockXProvider` | Mock implementado; integração real não implementada |
 | Assets da Web UI | Compilação Tailwind e cópia local de HTMX por ferramentas npm | Implementado/configurado |
-| API do X | Viabilidade de acesso e uso da integração real | Pendente de decisão |
-| Período padrão da coleta | 7 dias é apenas uma proposta | Pendente de decisão |
 
 Frontend: Web UI server-rendered pelo próprio FastAPI, com Jinja2, HTML5, Tailwind CSS e HTMX. JavaScript vanilla apenas quando necessário. Não há SPA, aplicação frontend independente, React, Vue ou Next.js.
 
-Mock Providers fazem parte da estratégia técnica do MVP e atendem à mesma abstração dos providers reais; não são uma tecnologia externa separada. Devem garantir execução local e demonstração sem credenciais externas, independentemente da viabilidade das integrações reais.
+Mock Providers fazem parte da estratégia técnica do MVP e atendem à mesma abstração dos providers reais (`SourceProvider` ou `AnalysisProvider`); não são uma tecnologia externa separada. Garantem execução local e demonstração sem credenciais externas.
 
 ## Arquitetura da interface
 
@@ -81,8 +79,10 @@ Jinja2, Tailwind CSS e HTMX estão configurados como dependências/assets da Web
 ## Configuração existente a preservar
 
 - Compose executa a aplicação e o PostgreSQL; o banco usa volume persistente e health check. Para execução no host, PostgreSQL é publicado em `127.0.0.1:5433`; entre containers, o backend usa `db:5432`.
-- `APP_NAME`, `ENVIRONMENT`, `LOG_LEVEL` e `DATABASE_URL` no Settings; variáveis do processo precedem `backend/.env`.
+- `APP_NAME`, `ENVIRONMENT`, `LOG_LEVEL`, `DATABASE_URL`, `GNEWS_API_KEY`, `ANALYSIS_PROVIDER`, `GEMINI_MODEL` e `GEMINI_API_KEY` no Settings; variáveis do processo precedem `backend/.env`.
 - Driver `postgresql+psycopg://`; credenciais reais fora do código/versionamento.
+- `DATABASE_URL`, `GNEWS_API_KEY` e `GEMINI_API_KEY` são `SecretStr`. `backend/.env` é local e não versionado; `.env.example` contém apenas valores de desenvolvimento e chaves vazias.
+- `ANALYSIS_PROVIDER` seleciona explicitamente `gemini` ou `mock` (padrão `mock`); `GEMINI_MODEL` tem padrão `gemini-3.8-flash` no código e no Compose.
 - Sessões síncronas com encerramento por requisição; migrações explícitas.
 - A aplicação publica a Web UI e a API em `127.0.0.1:7778` no host; dentro do container o Uvicorn atende na porta 8000. Swagger e OpenAPI permanecem disponíveis.
 
@@ -92,11 +92,10 @@ Instruções de execução: [backend/README.md](../backend/README.md).
 
 A execução local é requisito do MVP. Implantação/deploy permanece fora do escopo da entrega atual, sem plataforma definida.
 
-## Pendências do grupo
+## Integrações externas
 
-- Período padrão de coleta; 7 dias ainda não confirmado.
-- Plano/limites operacionais do GNews; viabilidade e credenciais do X real.
-- Contratos e validações pendentes em [business-rules.md](business-rules.md).
-- Cenário final de demonstração; bancos digitais permanece uma sugestão estratégica.
+- **GNews:** endpoint de busca `https://gnews.io/api/v4/search` via HTTPX, com a chave no header `X-Api-Key`, até 10 resultados por consulta e intervalo mínimo de 1,05 s entre requisições por instância. Não há paginação.
+- **Gemini:** SDK `google-genai`, com saída JSON estruturada validada por Pydantic. Sem `GEMINI_API_KEY`, o modo `gemini` retorna erro controlado e não troca automaticamente para mock. A chave é segredo de runtime: não persistir, não registrar em log e não enviar no prompt.
+- **X:** apenas mock. A integração real permanece fora da implementação.
 
-O modo mock deve viabilizar o MVP independentemente da viabilidade das integrações reais. A análise individual de eventos via Gemini/mock é uma extensão opcional posterior ao MVP base, selecionada por `ANALYSIS_PROVIDER`; sem `GEMINI_API_KEY`, o modo `gemini` retorna erro controlado e não troca automaticamente para mock. A chave é segredo de runtime e nunca deve ser persistida ou registrada em logs. Essa extensão não participa da coleta e não introduz filas ou workers.
+A análise individual de eventos é uma extensão posterior ao MVP base. Ela não participa da coleta e não introduz filas ou workers.

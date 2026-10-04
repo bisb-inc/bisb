@@ -46,22 +46,33 @@ Não execute os dois modos simultaneamente: ambos usam o mesmo volume e publicam
 | `LOG_LEVEL` | Nível de log; padrão `INFO` |
 | `DATABASE_URL` | URL PostgreSQL `postgresql+psycopg://`; obrigatória |
 | `GNEWS_API_KEY` | Chave opcional; quando configurada, ativa notícias reais do GNews. Mantenha-a somente no `.env` local. |
-| `ANALYSIS_PROVIDER` | Seleção explícita `gemini` ou `mock`; `.env.example` usa `mock`. |
-| `GEMINI_MODEL` | Modelo Gemini; padrão `gemini-3.8-flash`. |
+| `ANALYSIS_PROVIDER` | Seleção explícita `gemini` ou `mock`; padrão e `.env.example` usam `mock`. |
+| `GEMINI_MODEL` | Modelo Gemini usado na análise; padrão `gemini-3.8-flash` no código e no Compose. Ajuste para um modelo disponível na conta usada. |
 | `GEMINI_API_KEY` | Chave opcional, necessária quando `ANALYSIS_PROVIDER=gemini`; nunca a registre ou inclua em imagens/documentos. |
 | `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB` | Inicialização do banco pelo Compose |
 
 A aplicação lê `backend/.env`; variáveis do processo têm prioridade. Mantenha a URL consistente com as credenciais usadas para inicializar o volume. Alterar os valores no `.env` não altera usuários/senhas de um volume já criado. Os valores do `.env.example` destinam-se somente ao desenvolvimento local.
 
+`backend/.env` não deve ser versionado. `.env.example` não contém chaves reais; `GNEWS_API_KEY` e `GEMINI_API_KEY` são tratados como `SecretStr`. Não inclua seus valores em logs, respostas, documentação ou imagens. O serviço `migrate` recebe apenas a configuração de banco e não depende de Gemini. Após alterar variáveis no `.env`, recrie o serviço para atualizar seu ambiente: `docker compose --env-file .env up -d --force-recreate app`.
+
 ## Fluxo demonstrável e modo mock
 
-1. Abra a Web UI e crie uma análise informando nome, empresa-alvo e site.
-2. Adicione ao menos um concorrente com site na lateral da aba **Monitoramento**.
-3. Na aba **Perfil da empresa**, preencha opcionalmente mercado, produtos, público-alvo e termo de busca. Um termo vazio usa o nome da empresa.
-4. Informe as datas inicial/final na coleta e execute-a. Nenhum período padrão é imposto.
-5. Consulte e filtre a timeline por empresa, fonte e intervalo.
+Para executar sem credenciais externas, deixe `GNEWS_API_KEY` vazio e selecione `ANALYSIS_PROVIDER=mock`.
 
-Quando `GNEWS_API_KEY` estiver configurada em `backend/.env`, `GNewsProvider` consulta notícias reais. A chave é enviada no cabeçalho `X-Api-Key`, não na URL; a busca usa o `search_term` da empresa (ou seu nome como fallback) e o intervalo informado na coleta. O provider normaliza título, descrição, URL e data de publicação e persiste `is_mock=false`. O GNews fornece até 10 resultados por consulta nesta implementação. As requisições são espaçadas para respeitar o limite de uma requisição por segundo documentado para o plano gratuito. Veja a [autenticação](https://docs.gnews.io/authentication), o [endpoint de busca](https://docs.gnews.io/endpoints/search-endpoint) e os [limites e erros](https://docs.gnews.io/error-handling).
+1. Abra `/ui/analyses` e selecione **Nova análise** (`/ui/analyses/new`).
+2. Preencha as cinco etapas: **Análise**, **Empresa principal / TARGET**, **Concorrentes**, **Período** e **Revisão**. Nome/site são necessários; `search_term` é opcional e usa o nome como fallback. O wizard exige ao menos um concorrente.
+3. Escolha **1 semana**, **1 mês**, **3 meses** ou **Personalizado** e confirme **Criar e analisar**. A ação cria os dados e executa a coleta inicial; não chama Gemini. Uma falha de coleta mantém a análise criada e é informada no workspace.
+4. No workspace, use **Visão geral**, **Timeline** e **Empresas**. Timeline filtra por empresa, fonte e período, em ordem `published_at DESC`, com desempate `collected_at DESC`; os filtros HTMX mantêm uma URL navegável.
+5. Use **Setup** (`/ui/analyses/{id}/setup`) para nome da análise, concorrentes, nome/site das empresas, perfil manual opcional e `search_term`. Alterar `Company` afeta todas as análises que a compartilham.
+6. **Atualizar monitoramento** leva ao formulário de período na Visão geral. A coleta informa sucesso, sucesso parcial ou falha e quantidade de novos eventos.
+
+O wizard inicia em **1 semana** como preset de UX. Cada coleta recebe datas concretas; nenhum período é persistido em `Analysis`. Semana inclui hoje e os seis dias anteriores; mês e trimestre usam subtração de meses de calendário. Datas inicial/final são inclusivas para o usuário, convertidas internamente ao intervalo UTC com fim exclusivo no dia seguinte. O cabeçalho informa evento mais recentemente recebido, não “última coleta”; não há registro de tentativas de coleta.
+
+A Visão geral deriva a distribuição de eventos por empresa e destaca até cinco eventos com análise Gemini, ordenados por relevância e publicação; sem eles, usa os cinco mais recentes. Não cria scores nem chama Gemini automaticamente. Consulte a limitação do contador em [Limitações conhecidas](#limitações-conhecidas).
+
+Quando `GNEWS_API_KEY` estiver configurada em `backend/.env`, `GNewsProvider` consulta notícias reais. A chave é enviada no cabeçalho `X-Api-Key`, não na URL. O `search_term` da empresa (ou nome como fallback) é escapado e envolvido em aspas como frase exata: `q="Mercado Pago"`. HTTPX codifica os parâmetros; a consulta envia `in=title,description`, `sortby=publishedAt`, `from` e `to`, preservando o intervalo solicitado. Isso reduz matches amplos em nomes compostos sem aplicar classificação por IA ou filtros adicionais de relevância.
+
+O provider normaliza título, descrição, URL e publicação, com `is_mock=false`. A implementação solicita até 10 resultados por consulta, limita a query final a 200 caracteres e espaça requisições em pelo menos 1,05 segundo por instância, respeitando o limite documentado para o plano gratuito. Não há paginação da busca externa; intervalos amplos não garantem cobertura exaustiva das notícias. Referências: [autenticação](https://docs.gnews.io/authentication), [endpoint de busca](https://docs.gnews.io/endpoints/search-endpoint) e [limites e erros](https://docs.gnews.io/error-handling).
 
 Sem `GNEWS_API_KEY`, `MockNewsProvider` (fonte `GNEWS`) continua ativo. `MockXProvider` (fonte `X`) permanece ativo em qualquer configuração. Os mocks funcionam sem credenciais, produzem conteúdo previsível dentro do intervalo informado e persistem `is_mock=true`; a interface os identifica como **Demonstração · mock**. Se a chamada real ao GNews falhar, a coleta informa falha para essa fonte em vez de substituir silenciosamente o resultado por um mock; o provider X mockado continua sendo tentado. Repetir a coleta não duplica eventos com a mesma empresa, fonte e URL.
 
@@ -104,17 +115,21 @@ Exemplo mínimo de criação:
 }
 ```
 
-A análise é criada com exatamente um TARGET e pode começar sem concorrentes. O endpoint de adicionar empresa cadastra somente COMPETITOR. A edição de Company é compartilhada entre análises. Veja os schemas completos em `/docs`.
+Na REST API, a análise é criada com exatamente um TARGET e pode começar sem concorrentes; o wizard exige ao menos um antes da confirmação. O endpoint de adicionar empresa cadastra somente COMPETITOR. A edição de Company é compartilhada entre análises. Veja os schemas completos em `/docs` e [app/schemas.py](app/schemas.py).
 
 ## Extensão opcional pós-MVP: análise de eventos por IA
 
 A análise por IA é uma extensão opcional posterior ao MVP base e não altera o critério de aceite original. Na timeline, selecione **Analisar com IA** em um evento já coletado. A operação é individual e síncrona; não ocorre durante coleta ou carregamento da timeline. Um resultado existente é reutilizado, e **Reanalisar** solicita explicitamente uma nova chamada.
 
-Configure `ANALYSIS_PROVIDER=gemini` e `GEMINI_API_KEY` no `.env` para chamar Gemini; `GEMINI_MODEL` permite escolher o modelo e assume `gemini-3.8-flash`. Chave ausente, erro de rede, quota ou resposta inválida produzem erro controlado, sem fallback para resultado simulado. Para execução local sem credencial, selecione `ANALYSIS_PROVIDER=mock`; a UI e API identificam o resultado como simulado. Não coloque a chave em documentação, logs ou respostas.
+Configure `ANALYSIS_PROVIDER=gemini`, `GEMINI_API_KEY` e `GEMINI_MODEL` no `.env` para chamar Gemini. Chave ausente, erro de rede, quota ou resposta inválida produzem erro controlado, sem fallback para resultado simulado. Para execução local sem credencial, selecione `ANALYSIS_PROVIDER=mock`; a UI e API identificam o resultado como simulado. Não coloque a chave em documentação, logs ou respostas.
 
-O provider Gemini e sua validação por schema estão implementados. A chamada real não foi validada nesta execução porque `ANALYSIS_PROVIDER=gemini` não estava selecionado no ambiente local.
+A integração Gemini foi validada em execução real. A suíte automatizada usa cliente mockado e não faz chamadas externas.
 
 `EventAnalysis` armazena o resumo, categoria, intensidade de impacto, sentimento, relevância e justificativa separadamente do `Event` original. A coleta e a timeline permanecem disponíveis independentemente do provider de análise.
+
+`AnalysisProvider` é independente de `SourceProvider`. Gemini usa o SDK `google-genai` e schema Pydantic para saída estruturada; recebe somente empresa, título, descrição, fonte e publicação. Não persiste a resposta bruta. A análise é genérica do acontecimento, sem comparação com um TARGET específico. O fragmento expansível identifica **Análise Gemini** ou **Análise simulada**; `Event.is_mock` e `EventAnalysis.is_mock` distinguem, respectivamente, origem do acontecimento e origem do enriquecimento.
+
+POST reutiliza a análise existente; `force=true` reanalisa e só substitui o resultado após resposta válida. A unicidade usa `event_id` como PK/FK, com bloqueio do evento no PostgreSQL. Erros REST: evento/resultado inexistente `404`, configuração ausente `503`, falha do provider `502`, conflito de persistência concorrente `409`. O resultado anterior permanece disponível em falha de reanálise.
 
 ## Verificações
 
@@ -129,14 +144,22 @@ uv run --locked alembic check
 npm run build
 ```
 
-Os testes padrão usam SQLite temporário e providers mockados; não os trate como prova de integração PostgreSQL. Para testar um banco PostgreSQL isolado, configure `DATABASE_URL` e `TEST_POSTGRES_URL` com uma base de teste dedicada, aplique as migrações e execute:
+Os testes padrão usam SQLite temporário e clientes/providers externos mockados; não os trate como prova de integração com PostgreSQL, GNews ou Gemini. Para testar um banco PostgreSQL isolado, configure `DATABASE_URL` e `TEST_POSTGRES_URL` com uma base de teste dedicada, aplique as migrações e execute:
 
 ```powershell
 uv run --locked alembic upgrade head
 uv run --locked pytest -q tests/test_postgres_integration.py
 ```
 
-O teste real percorre a Web UI, a coleta mockada, os assets servidos e a timeline, e remove os registros temporários criados. Não execute contra um banco com dados de usuário.
+O teste opt-in percorre persistência, Web UI, coleta e assets, mas ainda envia o formulário anterior ao wizard; precisa ser adaptado antes de validar o fluxo atual (ver abaixo). Não execute contra um banco com dados de usuário.
+
+## Limitações conhecidas
+
+- **Contador da Visão geral:** em [workspace/overview.html](app/web/templates/workspace/overview.html), a variável `events` é substituída por `highlights` antes da renderização do contador “Acontecimentos”. Na carga da página, o número reflete apenas os destaques (até cinco), enquanto a distribuição por empresa usa o conjunto consultado. A resposta HTMX de coleta atualiza o contador com o total de eventos da análise.
+- **Contagens após a coleta HTMX:** a resposta da coleta calcula destaques e contagens a partir de todos os eventos da análise, enquanto a URL enviada em `HX-Push-Url` contém o intervalo coletado. Ao recarregar essa URL, o filtro de período é aplicado e as contagens podem mudar. Ver [Web Routes](app/web/routes.py).
+- **Teste PostgreSQL opt-in:** o [teste](tests/test_postgres_integration.py) envia `name`, `target_name` e `target_website` diretamente para `/ui/analyses`, mas a rota atual espera `wizard_state`. O teste também contém expectativas da interface anterior.
+
+Esses pontos são limitações concretas da implementação e da validação atuais, não funcionalidades futuras nem decisões arquiteturais pendentes. X real, paginação e coordenação de coletas concorrentes permanecem fora da implementação.
 
 ## Encerrar
 
