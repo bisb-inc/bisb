@@ -537,9 +537,7 @@ prompts/
 README.md
 ```
 
-Observação:
-
-Os arquivos `.ai/` deverão ser revisados pelo grupo. Aqui o responsável terá que consolidar o material, e não por definir sozinho toda a arquitetura.
+Os arquivos `.ai/` são revisados pelo grupo; o responsável consolida o material, sem definir sozinho a arquitetura.
 
 ---
 
