@@ -1,18 +1,24 @@
-{% if events %}
-  <ol class="divide-y divide-line border-y border-line">
-    {% for event in events %}
-      <li class="py-5">
-        <div class="flex flex-wrap items-center gap-2 text-xs">
-          <span class="font-semibold uppercase tracking-wide text-accent">{{ event.source.value }}</span>
-          <span class="text-muted">·</span><span class="text-muted">{{ event.company.name }}</span>
-          <span class="text-muted">·</span><time datetime="{{ event.published_at.isoformat() }}" class="text-muted">{{ event.published_at.strftime('%d/%m/%Y %H:%M UTC') }}</time>
-          {% if event.is_mock %}<span class="mock-badge" title="Conteúdo gerado por provider mock">Demonstração · mock</span>{% endif %}
-        </div>
-        <h3 class="mt-2 text-base font-semibold"><a href="{{ event.url }}" {% if event.is_mock %}aria-label="{{ event.title }} (evento simulado)"{% else %}target="_blank" rel="noopener noreferrer"{% endif %} class="hover:text-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">{{ event.title }}</a></h3>
-        {% if event.description %}<p class="mt-1 max-w-3xl text-sm leading-6 text-muted">{{ event.description }}</p>{% endif %}
-      </li>
-    {% endfor %}
-  </ol>
-{% else %}
-  <div class="border-y border-line py-10"><h3 class="font-semibold">Nenhum acontecimento neste recorte</h3><p class="mt-2 text-sm text-muted">Execute a coleta para preencher a timeline ou ajuste os filtros.</p></div>
-{% endif %}
+<div id="event-list" {% if oob %}hx-swap-oob="outerHTML"{% endif %}>
+  {% if events %}
+    <ol class="divide-y divide-line border-b border-line">
+      {% for event in events %}
+        <li class="py-5 sm:py-6">
+          <article aria-labelledby="event-title-{{ event.id }}">
+            <div class="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
+              <span class="font-semibold text-ink">{{ event.company.name }}</span><span class="role-label">{{ roles[event.company_id].value if roles is defined and event.company_id in roles else '' }}</span>
+              <span class="text-line" aria-hidden="true">·</span><time datetime="{{ event.published_at.isoformat() }}" class="text-muted">{{ event.published_at.strftime('%d %b %Y · %H:%M UTC') }}</time>
+              <span class="text-line" aria-hidden="true">·</span><span class="text-muted">{{ event.source.value }}</span>
+              {% if event.is_mock %}<span class="mock-badge">Demonstração · mock</span>{% endif %}
+            </div>
+            <h3 id="event-title-{{ event.id }}" class="mt-2 text-base font-semibold leading-6"><a href="{{ event.url }}" {% if not event.is_mock %}target="_blank" rel="noopener noreferrer"{% else %}aria-label="{{ event.title }} (evento simulado)"{% endif %} class="focus-ring rounded-sm hover:text-accent">{{ event.title }}</a></h3>
+            {% if event.description %}<p class="mt-1 max-w-3xl whitespace-pre-line text-sm leading-6 text-muted">{{ event.description }}</p>{% endif %}
+            {% if not event.is_mock %}<a href="{{ event.url }}" target="_blank" rel="noopener noreferrer" class="mt-2 inline-block text-xs font-medium text-accent hover:underline">Abrir fonte ↗</a>{% else %}<span class="mt-2 inline-block text-xs text-muted">Fonte simulada para demonstração</span>{% endif %}
+            {% set event_analysis = event.event_analysis %}{% set error = none %}{% include "partials/event_analysis.html" %}
+          </article>
+        </li>
+      {% endfor %}
+    </ol>
+  {% else %}
+    <div class="border-b border-line py-10"><h3 class="font-semibold">Nenhum acontecimento neste recorte</h3><p class="mt-2 max-w-lg text-sm leading-6 text-muted">Execute uma coleta ou ajuste os filtros para consultar outro período.</p></div>
+  {% endif %}
+</div>

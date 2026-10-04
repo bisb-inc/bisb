@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}{{ analysis.name }} · Empresas{% endblock %}
+{% block content %}
+{% include "partials/workspace_header.html" %}
+<section class="max-w-4xl" aria-labelledby="companies-heading">
+  <p class="eyebrow">Empresas monitoradas</p><h2 id="companies-heading" class="mt-1 text-xl font-semibold">Empresas</h2>
+  {% set target_link = (analysis.companies|selectattr('role.value', 'equalto', 'TARGET')|first) %}
+  <section class="mt-7" aria-labelledby="target-heading"><h3 id="target-heading" class="mb-3 text-xs font-semibold uppercase tracking-wide text-muted">Empresa principal</h3>
+    {% if target_link %}<div class="flex flex-wrap items-baseline justify-between gap-3 border-y border-line py-4"><div class="min-w-0"><h4 class="font-semibold">{{ target_link.company.name }} <span class="ml-2 text-[11px] font-semibold tracking-wide text-accent">TARGET</span></h4><a href="{{ target_link.company.website }}" class="company-url mt-1 inline-block text-sm text-muted hover:text-accent">{{ target_link.company.website }}</a></div><a href="/ui/analyses/{{ analysis.id }}/setup#company-{{ target_link.company_id }}" class="text-sm text-accent hover:underline">Editar no Setup</a></div>{% endif %}
+  </section>
+  <section class="mt-8" aria-labelledby="competitors-heading"><div class="mb-3 flex items-center justify-between"><h3 id="competitors-heading" class="text-xs font-semibold uppercase tracking-wide text-muted">Concorrentes</h3><span class="text-xs text-muted">{{ analysis.companies|length - 1 }}</span></div>
+    {% for link in analysis.companies if link.role.value == 'COMPETITOR' %}<div class="flex flex-wrap items-baseline justify-between gap-3 border-y border-line py-4"><div class="min-w-0"><h4 class="font-semibold">{{ link.company.name }}</h4><a href="{{ link.company.website }}" class="company-url mt-1 inline-block text-sm text-muted hover:text-accent">{{ link.company.website }}</a></div><a href="/ui/analyses/{{ analysis.id }}/setup#company-{{ link.company_id }}" class="text-sm text-accent hover:underline">Editar no Setup</a></div>{% else %}<p class="border-y border-line py-5 text-sm text-muted">Nenhum concorrente cadastrado. Adicione empresas em <a class="text-accent underline" href="/ui/analyses/{{ analysis.id }}/setup#competitors">Setup</a>.</p>{% endfor %}
+  </section>
+</section>
+{% endblock %}

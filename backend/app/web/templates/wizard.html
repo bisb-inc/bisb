@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Nova análise · Competitive Monitor{% endblock %}
+{% block content %}
+<section class="mx-auto max-w-2xl" aria-labelledby="wizard-title">
+  <a href="/ui/analyses" class="text-sm text-muted hover:text-ink">← Voltar às análises</a>
+  <div class="mt-6 border-b border-line pb-5">
+    <p class="eyebrow">Nova análise</p>
+    <h1 id="wizard-title" class="mt-2 text-2xl font-semibold tracking-tight">Configure seu monitoramento</h1>
+    <ol class="wizard-progress mt-6 grid grid-cols-5 gap-2" aria-label="Progresso da configuração">
+      {% for item in range(1, 6) %}
+        <li class="min-w-0 space-y-2" {% if item == step %}aria-current="step"{% endif %}>
+          <div class="h-1 {% if item < step %}bg-success{% elif item == step %}bg-accent{% else %}bg-line{% endif %}"></div>
+          <span class="wizard-step-label text-[11px] {% if item == step %}font-semibold text-ink{% elif item < step %}font-medium text-accent{% else %}text-muted{% endif %}">{{ ['Análise', 'Empresa', 'Concorrentes', 'Período', 'Revisão'][item - 1] }}</span>
+        </li>
+      {% endfor %}
+    </ol>
+  </div>
+  <div id="wizard-panel" class="min-h-[23rem] py-7" aria-live="polite">
+    {% include "partials/wizard_panel.html" %}
+  </div>
+</section>
+{% endblock %}

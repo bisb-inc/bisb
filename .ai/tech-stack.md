@@ -18,6 +18,7 @@ Referência técnica do projeto. Prioridade: [arquitetura oficial](../docs/arqui
 | Documentação | Markdown e Mermaid | Implementado/configurado |
 | Persistência de negócio | Modelos e migrações das entidades do MVP | Implementado/configurado |
 | Endpoints de negócio | API REST para análises, empresas, coleta e eventos | Implementado/configurado |
+| Enriquecimento opcional de eventos | Google GenAI SDK (`google-genai`), schema Pydantic estruturado e `EventAnalysis` | Implementado como extensão opcional; chamada real à Gemini ainda não validada neste ambiente |
 | Web UI — renderização | Jinja2 e HTML5, renderizados pelo próprio FastAPI | Implementado/configurado |
 | Web UI — estilização | Tailwind CSS compilado para CSS estático | Implementado/configurado |
 | Web UI — interações | HTMX local; JavaScript vanilla apenas quando necessário | Implementado/configurado |
@@ -69,6 +70,7 @@ Versões abaixo registradas em [uv.lock](../backend/uv.lock), não inferidas da 
 | pytest | 9.1.1 |
 | httpx | 0.28.1 |
 | ruff | 0.16.9 |
+| google-genai | 1.75.0 |
 
 Versões dos assets confirmadas no [package-lock.json](../backend/package-lock.json): Tailwind CSS `4.3.0`, `@tailwindcss/cli` `4.3.0` e HTMX `2.0.11`. Versões de Jinja2 `3.1.6` e `python-multipart` `0.0.32` estão no `uv.lock`.
 
@@ -97,4 +99,4 @@ A execução local é requisito do MVP. Implantação/deploy permanece fora do e
 - Contratos e validações pendentes em [business-rules.md](business-rules.md).
 - Cenário final de demonstração; bancos digitais permanece uma sugestão estratégica.
 
-O modo mock deve viabilizar o MVP independentemente da viabilidade das integrações reais. Preservar a Web UI integrada definida acima, sem introduzir serviços de IA, autenticação, filas ou workers.
+O modo mock deve viabilizar o MVP independentemente da viabilidade das integrações reais. A análise individual de eventos via Gemini/mock é uma extensão opcional posterior ao MVP base, selecionada por `ANALYSIS_PROVIDER`; sem `GEMINI_API_KEY`, o modo `gemini` retorna erro controlado e não troca automaticamente para mock. A chave é segredo de runtime e nunca deve ser persistida ou registrada em logs. Essa extensão não participa da coleta e não introduz filas ou workers.

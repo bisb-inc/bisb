@@ -3,6 +3,7 @@ from enum import StrEnum
 
 from sqlalchemy import (
     Boolean,
+    CheckConstraint,
     DateTime,
     Enum,
     ForeignKey,
@@ -46,6 +47,36 @@ class CompanyRole(StrEnum):
 class EventSource(StrEnum):
     GNEWS = "GNEWS"
     X = "X"
+
+
+class EventAnalysisCategory(StrEnum):
+    PRODUCT = "PRODUCT"
+    PRICING = "PRICING"
+    PARTNERSHIP = "PARTNERSHIP"
+    EXPANSION = "EXPANSION"
+    FINANCIAL_RESULTS = "FINANCIAL_RESULTS"
+    REGULATORY = "REGULATORY"
+    M_AND_A = "M_AND_A"
+    PEOPLE = "PEOPLE"
+    TECHNOLOGY = "TECHNOLOGY"
+    OTHER = "OTHER"
+
+
+class CompetitiveImpact(StrEnum):
+    LOW = "LOW"
+    MEDIUM = "MEDIUM"
+    HIGH = "HIGH"
+
+
+class EventSentiment(StrEnum):
+    NEGATIVE = "NEGATIVE"
+    NEUTRAL = "NEUTRAL"
+    POSITIVE = "POSITIVE"
+
+
+class AnalysisEngine(StrEnum):
+    GEMINI = "GEMINI"
+    MOCK = "MOCK"
 
 
 class Analysis(Base):
@@ -119,3 +150,42 @@ class Event(Base):
     published_at: Mapped[datetime] = mapped_column(UTCDateTime())
     collected_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=lambda: datetime.now(UTC))
     company: Mapped[Company] = relationship(back_populates="events")
+    event_analysis: Mapped[EventAnalysis | None] = relationship(
+        back_populates="event", cascade="all, delete-orphan", uselist=False
+    )
+
+
+class EventAnalysis(Base):
+    __tablename__ = "event_analyses"
+    __table_args__ = (
+        CheckConstraint(
+            "relevance_score >= 0 AND relevance_score <= 100",
+            name="ck_event_analysis_relevance_score",
+        ),
+    )
+
+    event_id: Mapped[int] = mapped_column(
+        ForeignKey("events.id", ondelete="CASCADE"), primary_key=True
+    )
+    summary: Mapped[str] = mapped_column(String(500))
+    category: Mapped[EventAnalysisCategory] = mapped_column(
+        Enum(EventAnalysisCategory, native_enum=False, create_constraint=True, length=24)
+    )
+    competitive_impact: Mapped[CompetitiveImpact] = mapped_column(
+        Enum(CompetitiveImpact, native_enum=False, create_constraint=True, length=8)
+    )
+    sentiment: Mapped[EventSentiment] = mapped_column(
+        Enum(EventSentiment, native_enum=False, create_constraint=True, length=8)
+    )
+    relevance_score: Mapped[int] = mapped_column(nullable=False)
+    justification: Mapped[str] = mapped_column(String(500))
+    provider: Mapped[AnalysisEngine] = mapped_column(
+        Enum(AnalysisEngine, native_enum=False, create_constraint=True, length=8)
+    )
+    model: Mapped[str] = mapped_column(String(120))
+    is_mock: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=lambda: datetime.now(UTC))
+    updated_at: Mapped[datetime] = mapped_column(
+        UTCDateTime(), default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC)
+    )
+    event: Mapped[Event] = relationship(back_populates="event_analysis")

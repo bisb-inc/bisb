@@ -19,6 +19,9 @@ class Settings(BaseSettings):
     environment: str = "development"
     database_url: SecretStr
     gnews_api_key: SecretStr | None = None
+    analysis_provider: Literal["gemini", "mock"] = "mock"
+    gemini_model: str = "gemini-3.8-flash"
+    gemini_api_key: SecretStr | None = None
     log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = "INFO"
 
     @field_validator("database_url")

@@ -1,13 +1,13 @@
-<article id="company-profile-{{ profile_company.id }}" class="border-t border-line py-6">
-  <div class="mb-4 flex flex-wrap items-baseline justify-between gap-2"><h3 class="text-lg font-semibold">{{ profile_company.name }}</h3><span class="text-xs font-semibold uppercase tracking-wide text-muted">{{ profile_role.value }}</span></div>
-  <form action="/ui/companies/{{ profile_company.id }}" method="post" hx-put="/ui/companies/{{ profile_company.id }}" hx-target="#company-profile-{{ profile_company.id }}" hx-swap="outerHTML" class="grid gap-4 md:grid-cols-2">
+<article id="company-{{ profile_company.id }}" class="border-t border-line py-6">
+  <div class="mb-4 flex flex-wrap items-baseline justify-between gap-2"><h3 class="font-semibold">{{ profile_company.name }}</h3><span class="text-[10px] font-semibold tracking-wide text-muted">{{ profile_role.value }}</span></div>
+  <form action="/ui/companies/{{ profile_company.id }}" method="post" class="grid gap-4 md:grid-cols-2">
     <input type="hidden" name="analysis_id" value="{{ analysis.id }}">
     <div><label for="company-name-{{ profile_company.id }}" class="field-label">Nome</label><input id="company-name-{{ profile_company.id }}" name="name" required maxlength="160" value="{{ profile_company.name }}" class="field-input"></div>
     <div><label for="company-site-{{ profile_company.id }}" class="field-label">Site</label><input id="company-site-{{ profile_company.id }}" name="website" type="url" required value="{{ profile_company.website or '' }}" class="field-input"></div>
-    <div><label for="company-search-{{ profile_company.id }}" class="field-label">Termo de busca <span class="font-normal text-muted">(vazio usa o nome)</span></label><input id="company-search-{{ profile_company.id }}" name="search_term" value="{{ profile_company.search_term or '' }}" class="field-input"></div>
-    <div><label for="company-market-{{ profile_company.id }}" class="field-label">Mercado</label><input id="company-market-{{ profile_company.id }}" name="market" value="{{ profile_company.market or '' }}" class="field-input"></div>
-    <div><label for="company-products-{{ profile_company.id }}" class="field-label">Produtos</label><textarea id="company-products-{{ profile_company.id }}" name="products" rows="2" class="field-input">{{ profile_company.products or '' }}</textarea></div>
-    <div><label for="company-audience-{{ profile_company.id }}" class="field-label">Público-alvo</label><textarea id="company-audience-{{ profile_company.id }}" name="audience" rows="2" class="field-input">{{ profile_company.audience or '' }}</textarea></div>
-    <div class="flex items-center gap-3 md:col-span-2"><button class="button-secondary" type="submit">Salvar perfil</button><span class="htmx-indicator text-xs text-muted" role="status">Salvando…</span></div>
+    <div><label for="company-search-{{ profile_company.id }}" class="field-label">Termo de busca <span class="font-normal text-muted">· opcional; usa o nome como padrão</span></label><input id="company-search-{{ profile_company.id }}" name="search_term" value="{{ profile_company.search_term or '' }}" class="field-input"></div>
+    <div><label for="company-market-{{ profile_company.id }}" class="field-label">Mercado · opcional</label><input id="company-market-{{ profile_company.id }}" name="market" value="{{ profile_company.market or '' }}" class="field-input"></div>
+    <div><label for="company-products-{{ profile_company.id }}" class="field-label">Produtos · opcional</label><textarea id="company-products-{{ profile_company.id }}" name="products" rows="2" class="field-input">{{ profile_company.products or '' }}</textarea></div>
+    <div><label for="company-audience-{{ profile_company.id }}" class="field-label">Público-alvo · opcional</label><textarea id="company-audience-{{ profile_company.id }}" name="audience" rows="2" class="field-input">{{ profile_company.audience or '' }}</textarea></div>
+    <div class="md:col-span-2"><button class="button-secondary" type="submit">Salvar dados da empresa</button></div>
   </form>
 </article>

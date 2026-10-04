@@ -2,7 +2,7 @@ from datetime import UTC, date, datetime, time, timedelta
 
 from fastapi import HTTPException
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app.models import Company, Event
 from app.services.analyses import get_analysis
@@ -20,7 +20,11 @@ def analysis_events(
     linked_ids = [link.company_id for link in analysis.companies]
     if company_id is not None and company_id not in linked_ids:
         raise HTTPException(status_code=422, detail="A empresa não pertence a esta análise")
-    statement = select(Event).where(Event.company_id.in_(linked_ids))
+    statement = (
+        select(Event)
+        .options(joinedload(Event.company), joinedload(Event.event_analysis))
+        .where(Event.company_id.in_(linked_ids))
+    )
     if company_id is not None:
         statement = statement.where(Event.company_id == company_id)
     if source is not None:

@@ -46,6 +46,9 @@ Não execute os dois modos simultaneamente: ambos usam o mesmo volume e publicam
 | `LOG_LEVEL` | Nível de log; padrão `INFO` |
 | `DATABASE_URL` | URL PostgreSQL `postgresql+psycopg://`; obrigatória |
 | `GNEWS_API_KEY` | Chave opcional; quando configurada, ativa notícias reais do GNews. Mantenha-a somente no `.env` local. |
+| `ANALYSIS_PROVIDER` | Seleção explícita `gemini` ou `mock`; `.env.example` usa `mock`. |
+| `GEMINI_MODEL` | Modelo Gemini; padrão `gemini-3.8-flash`. |
+| `GEMINI_API_KEY` | Chave opcional, necessária quando `ANALYSIS_PROVIDER=gemini`; nunca a registre ou inclua em imagens/documentos. |
 | `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB` | Inicialização do banco pelo Compose |
 
 A aplicação lê `backend/.env`; variáveis do processo têm prioridade. Mantenha a URL consistente com as credenciais usadas para inicializar o volume. Alterar os valores no `.env` não altera usuários/senhas de um volume já criado. Os valores do `.env.example` destinam-se somente ao desenvolvimento local.
@@ -89,6 +92,8 @@ Os contratos OpenAPI ficam em `/openapi.json` e Swagger em `/docs`.
 | `POST` | `/analyses/{id}/collect` |
 | `GET` | `/analyses/{id}/events?company=&source=&from=&to=` |
 | `GET` | `/companies/{id}/events` |
+| `POST` | `/events/{event_id}/analysis?force=false` |
+| `GET` | `/events/{event_id}/analysis` |
 
 Exemplo mínimo de criação:
 
@@ -100,6 +105,16 @@ Exemplo mínimo de criação:
 ```
 
 A análise é criada com exatamente um TARGET e pode começar sem concorrentes. O endpoint de adicionar empresa cadastra somente COMPETITOR. A edição de Company é compartilhada entre análises. Veja os schemas completos em `/docs`.
+
+## Extensão opcional pós-MVP: análise de eventos por IA
+
+A análise por IA é uma extensão opcional posterior ao MVP base e não altera o critério de aceite original. Na timeline, selecione **Analisar com IA** em um evento já coletado. A operação é individual e síncrona; não ocorre durante coleta ou carregamento da timeline. Um resultado existente é reutilizado, e **Reanalisar** solicita explicitamente uma nova chamada.
+
+Configure `ANALYSIS_PROVIDER=gemini` e `GEMINI_API_KEY` no `.env` para chamar Gemini; `GEMINI_MODEL` permite escolher o modelo e assume `gemini-3.8-flash`. Chave ausente, erro de rede, quota ou resposta inválida produzem erro controlado, sem fallback para resultado simulado. Para execução local sem credencial, selecione `ANALYSIS_PROVIDER=mock`; a UI e API identificam o resultado como simulado. Não coloque a chave em documentação, logs ou respostas.
+
+O provider Gemini e sua validação por schema estão implementados. A chamada real não foi validada nesta execução porque `ANALYSIS_PROVIDER=gemini` não estava selecionado no ambiente local.
+
+`EventAnalysis` armazena o resumo, categoria, intensidade de impacto, sentimento, relevância e justificativa separadamente do `Event` original. A coleta e a timeline permanecem disponíveis independentemente do provider de análise.
 
 ## Verificações
 

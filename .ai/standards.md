@@ -95,6 +95,16 @@ Usar HTMX para interações localizadas, como executar coleta, atualizar timelin
 
 ## Testes e evidências
 
+### Extensão opcional de análise por IA
+
+- Manter `AnalysisProvider` independente de `SourceProvider`; análise de evento não pode participar da coleta nem do carregamento da timeline.
+- Validar a saída estruturada do provider com schema Pydantic antes de persistir; não salvar resposta bruta completa.
+- Persistir enriquecimento em `EventAnalysis`, separado do `Event` original, e identificar resultados mockados na API e interface.
+- Reutilizar análise existente por padrão. Reanalisar somente por ação explícita e substituir o resultado anterior apenas depois de resposta válida.
+- Selecionar Gemini/mock por `ANALYSIS_PROVIDER`. Falha ou falta de chave no modo Gemini não faz fallback automático para mock.
+- Tratar `GEMINI_API_KEY` como segredo: nunca registrar, retornar, persistir ou incluir em imagem. Não incluir chaves em prompts enviados ao modelo.
+- Cobrir providers Gemini por cliente mockado; a suíte padrão não deve fazer chamadas externas. Validar API, Web Route HTMX, migração e preservação do evento/resultado anterior em falhas.
+
 A suíte em [backend/tests](../backend/tests) cobre configuração, health, OpenAPI, regras de negócio, providers, rotas Web/REST, fragmentos HTMX e fluxo completo com SQLite isolado. O teste PostgreSQL separado é opt-in e requer uma base dedicada.
 
 Validar o fluxo de análise até a timeline, TARGET único, concorrentes adicionados depois, perfil opcional, fallback de busca, identificação de mocks, deduplicação, filtros, falha parcial e preservação dos eventos. Tratar estados vazios, carregamento e erro na interface conforme a arquitetura.

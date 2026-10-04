@@ -2,7 +2,14 @@ from datetime import date, datetime
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-from app.models import CompanyRole, EventSource
+from app.models import (
+    AnalysisEngine,
+    CompanyRole,
+    CompetitiveImpact,
+    EventAnalysisCategory,
+    EventSentiment,
+    EventSource,
+)
 
 
 class CompanyInput(BaseModel):
@@ -74,6 +81,22 @@ class EventRead(BaseModel):
     is_mock: bool
     published_at: datetime
     collected_at: datetime
+
+
+class EventAnalysisRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    event_id: int
+    summary: str
+    category: EventAnalysisCategory
+    competitive_impact: CompetitiveImpact
+    sentiment: EventSentiment
+    relevance_score: int = Field(ge=0, le=100)
+    justification: str
+    provider: AnalysisEngine
+    model: str
+    is_mock: bool
+    created_at: datetime
+    updated_at: datetime
 
 
 class CollectionRequest(BaseModel):

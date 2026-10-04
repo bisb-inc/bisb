@@ -247,6 +247,23 @@ Mapa Competitivo, descoberta automática de concorrentes, geração automática 
 
 Os concorrentes podem ser adicionados após a criação da análise; a validação do fluxo completo exige ao menos um concorrente.
 
+## Extensão opcional implementada após o MVP base — análise de eventos por IA
+
+A análise por IA permaneceu fora do escopo original da Aula 1 e do critério de aceite acima. Posteriormente, foi implementada como extensão opcional para enriquecer individualmente um `Event` já persistido; a chamada real à Gemini ainda não foi validada neste ambiente. Ela não avalia o evento em relação a um TARGET específico, não executa durante a coleta e não é necessária para o funcionamento da timeline.
+
+Os resultados são armazenados em `EventAnalysis`, entidade 1:1 separada de `Event`, com resumo, categoria, intensidade do impacto competitivo, sentimento, score de relevância, justificativa, provider/modelo, marcador de mock e timestamps. Categorias: `PRODUCT`, `PRICING`, `PARTNERSHIP`, `EXPANSION`, `FINANCIAL_RESULTS`, `REGULATORY`, `M_AND_A`, `PEOPLE`, `TECHNOLOGY`, `OTHER`; impacto: `LOW`, `MEDIUM`, `HIGH`; sentimento: `NEGATIVE`, `NEUTRAL`, `POSITIVE`; score inteiro de 0 a 100.
+
+`AnalysisProvider` abstrai Gemini e mock, independentemente de `SourceProvider`. A seleção é explícita por `ANALYSIS_PROVIDER`; Gemini usa `GEMINI_API_KEY` e `GEMINI_MODEL` configurável (padrão `gemini-3.8-flash`) com saída estruturada validada. Sem chave ou em caso de erro, a operação informa falha sem criar resultado simulado, alterar `Event` ou apagar análise anterior. `ANALYSIS_PROVIDER=mock` produz resultado determinístico identificado como simulado. Não há análise automática, lote, filas ou workers.
+
+Endpoints adicionais desta extensão:
+
+| Método | Rota | Finalidade |
+| --- | --- | --- |
+| POST | `/events/{event_id}/analysis?force=false` | Criar análise ou reutilizar a existente; `force=true` solicita reanálise explícita |
+| GET | `/events/{event_id}/analysis` | Consultar resultado persistido |
+
+Na Web UI, a ação **Analisar com IA** fica disponível por evento na timeline; resultado e erros aparecem no fragmento HTMX. A extensão não altera os endpoints nem os critérios de aceite originais da entrega.
+
 ## Equipe
 
 - Leticia

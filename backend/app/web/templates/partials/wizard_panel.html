@@ -1,0 +1,74 @@
+<div id="wizard-step-content" tabindex="-1">
+  {% if error %}<p class="mb-5 rounded-sm border-l-2 border-danger bg-white px-4 py-3 text-sm text-danger" role="alert">{{ error }}</p>{% endif %}
+  {% if step == 1 %}
+    <h2 class="text-xl font-semibold">Dê um nome à análise</h2>
+    <p class="mt-2 text-sm leading-6 text-muted">Use um nome que ajude a reconhecer o mercado ou a comparação.</p>
+    <form action="/ui/analyses/new/step/1" method="post" class="mt-7 space-y-6">
+      <input type="hidden" name="wizard_state" value="{{ state|tojson|forceescape }}">
+      <div><label class="field-label" for="analysis-name">Nome da análise</label><input id="analysis-name" name="name" value="{{ state.name }}" maxlength="160" required autofocus class="field-input" placeholder="Ex.: Bancos digitais no Brasil"></div>
+      <div class="wizard-actions flex justify-end"><button class="button-primary" name="intent" value="next">Continuar <span aria-hidden="true">→</span></button></div>
+    </form>
+  {% elif step == 2 %}
+    <p class="eyebrow">Etapa 2 de 5</p><h2 class="mt-2 text-xl font-semibold">Empresa principal / TARGET</h2>
+    <p class="mt-2 text-sm leading-6 text-muted">Esta é a empresa de referência para comparar os acontecimentos.</p>
+    <form action="/ui/analyses/new/step/2" method="post" class="mt-7 space-y-5">
+      <input type="hidden" name="wizard_state" value="{{ state|tojson|forceescape }}">
+      <div><label class="field-label" for="target-name">Nome</label><input id="target-name" name="target_name" value="{{ state.target_name }}" maxlength="160" required autofocus class="field-input"></div>
+      <div><label class="field-label" for="target-website">Site</label><input id="target-website" name="target_website" value="{{ state.target_website }}" type="url" required class="field-input" placeholder="https://empresa.com.br"></div>
+      <div><label class="field-label" for="target-search">Termo de busca <span class="font-normal text-muted">· opcional</span></label><input id="target-search" name="target_search_term" value="{{ state.target_search_term }}" class="field-input"><p class="mt-1.5 text-xs text-muted">Se ficar vazio, usamos o nome da empresa.</p></div>
+      <div class="wizard-actions flex justify-between"><button class="button-secondary" name="intent" value="back">Voltar</button><button class="button-primary" name="intent" value="next">Continuar <span aria-hidden="true">→</span></button></div>
+    </form>
+  {% elif step == 3 %}
+    <p class="eyebrow">Etapa 3 de 5</p><h2 class="mt-2 text-xl font-semibold">Quais empresas quer comparar?</h2>
+    <p class="mt-2 text-sm leading-6 text-muted">Adicione pelo menos um concorrente. Seus dados permanecem enquanto configura a análise.</p>
+    <form id="competitor-wizard-form" action="/ui/analyses/new/step/3" method="post" class="mt-6 space-y-5">
+      <input type="hidden" name="wizard_state" value="{{ state|tojson|forceescape }}">
+      <div class="divide-y divide-line border-y border-line">
+        {% for competitor in state.competitors %}
+          <fieldset class="grid gap-3 py-4 sm:grid-cols-2"><legend class="sr-only">Concorrente {{ loop.index }}</legend>
+            <div><label class="field-label" for="competitor-name-{{ loop.index0 }}">Nome</label><input id="competitor-name-{{ loop.index0 }}" name="competitor_name_{{ loop.index0 }}" value="{{ competitor.name }}" required class="field-input"></div>
+            <div><label class="field-label" for="competitor-website-{{ loop.index0 }}">Site</label><input id="competitor-website-{{ loop.index0 }}" name="competitor_website_{{ loop.index0 }}" value="{{ competitor.website }}" type="url" required class="field-input"></div>
+            <div><label class="field-label" for="competitor-search-{{ loop.index0 }}">Termo de busca <span class="font-normal text-muted">· opcional</span></label><input id="competitor-search-{{ loop.index0 }}" name="competitor_search_{{ loop.index0 }}" value="{{ competitor.search_term }}" class="field-input"></div>
+            <div class="flex items-end justify-end"><button class="text-sm text-muted underline underline-offset-4 hover:text-danger" name="remove_index" value="{{ loop.index0 }}" formaction="/ui/analyses/new/step/3" formmethod="post" formnovalidate hx-post="/ui/analyses/new/step/3" hx-target="#wizard-panel" hx-swap="innerHTML" hx-include="#competitor-wizard-form" hx-vals='{"intent":"remove_competitor"}'>Remover concorrente {{ loop.index }}</button></div>
+          </fieldset>
+        {% else %}
+          <p class="py-4 text-sm text-muted">Nenhum concorrente adicionado.</p>
+        {% endfor %}
+      </div>
+      <div class="grid gap-3 rounded-sm bg-white/70 py-4 sm:grid-cols-2">
+        <div><label class="field-label" for="new-competitor-name">Novo concorrente · nome</label><input id="new-competitor-name" name="new_competitor_name" class="field-input"></div>
+        <div><label class="field-label" for="new-competitor-website">Site</label><input id="new-competitor-website" name="new_competitor_website" type="url" class="field-input"></div>
+        <div><label class="field-label" for="new-competitor-search">Termo de busca · opcional</label><input id="new-competitor-search" name="new_competitor_search_term" class="field-input"></div>
+        <div class="flex items-end"><button class="button-secondary" name="intent" value="add_competitor" hx-post="/ui/analyses/new/step/3" hx-target="#wizard-panel" hx-swap="innerHTML" hx-include="#competitor-wizard-form">Adicionar concorrente</button></div>
+      </div>
+      <div class="wizard-actions flex justify-between pt-2"><button class="button-secondary" name="intent" value="back">Voltar</button><button class="button-primary" name="intent" value="next">Continuar <span aria-hidden="true">→</span></button></div>
+    </form>
+  {% elif step == 4 %}
+    <p class="eyebrow">Etapa 4 de 5</p><h2 class="mt-2 text-xl font-semibold">Defina o período inicial</h2>
+    <p class="mt-2 text-sm leading-6 text-muted">A coleta inicial buscará acontecimentos publicados neste intervalo.</p>
+    <form action="/ui/analyses/new/step/4" method="post" class="mt-7 space-y-6">
+      <input type="hidden" name="wizard_state" value="{{ state|tojson|forceescape }}">
+      <fieldset><legend class="field-label mb-3">Período</legend><div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {% for value, label in [('week', '1 semana'), ('month', '1 mês'), ('quarter', '3 meses'), ('custom', 'Personalizado')] %}
+          <label class="period-option"><input type="radio" name="period" value="{{ value }}" {% if state.period == value %}checked{% endif %}><span>{{ label }}</span></label>
+        {% endfor %}
+      </div></fieldset>
+      <div class="grid gap-4 sm:grid-cols-2"><div><label class="field-label" for="period-from">De</label><input id="period-from" name="from_date" type="date" value="{{ state.from_date }}" class="field-input"></div><div><label class="field-label" for="period-to">Até</label><input id="period-to" name="to_date" type="date" value="{{ state.to_date }}" class="field-input"></div></div>
+      <p class="text-xs text-muted">Ao selecionar um preset, as datas correspondentes serão aplicadas. Para outro intervalo, escolha Personalizado.</p>
+      <div class="wizard-actions flex justify-between"><button class="button-secondary" name="intent" value="back">Voltar</button><button class="button-primary" name="intent" value="next">Revisar <span aria-hidden="true">→</span></button></div>
+    </form>
+  {% else %}
+    <p class="eyebrow">Etapa 5 de 5</p><h2 class="mt-2 text-xl font-semibold">Revise sua análise</h2>
+    <p class="mt-2 text-sm leading-6 text-muted">A coleta inicial será executada assim que confirmar.</p>
+    <dl class="mt-7 divide-y divide-line border-y border-line">
+      <div class="py-4"><dt class="text-xs text-muted">Análise</dt><dd class="mt-1 font-semibold">{{ state.name }}</dd></div>
+      <div class="py-4"><dt class="text-xs text-muted">Empresa principal · TARGET</dt><dd class="mt-1 font-semibold">{{ state.target_name }} <span class="font-normal text-muted">· {{ state.target_website }}</span></dd></div>
+      <div class="py-4"><dt class="text-xs text-muted">Concorrentes</dt><dd class="mt-1 space-y-1">{% for competitor in state.competitors %}<span class="block font-medium">{{ competitor.name }} <span class="font-normal text-muted">· {{ competitor.website }}</span></span>{% endfor %}</dd></div>
+      <div class="py-4"><dt class="text-xs text-muted">Período da coleta inicial</dt><dd class="mt-1 font-medium">{{ state.from_date[8:10] }}/{{ state.from_date[5:7] }}/{{ state.from_date[:4] }} a {{ state.to_date[8:10] }}/{{ state.to_date[5:7] }}/{{ state.to_date[:4] }}</dd></div>
+    </dl>
+    <div class="wizard-actions mt-7 flex justify-between gap-3">
+      <form action="/ui/analyses/new/step/5" method="post"><input type="hidden" name="wizard_state" value="{{ state|tojson|forceescape }}"><button class="button-secondary" name="intent" value="back">Voltar</button></form>
+      <form id="wizard-final-form" action="/ui/analyses" method="post"><input type="hidden" name="wizard_state" value="{{ state|tojson|forceescape }}"><button class="button-primary" type="submit" data-loading-label="Criando análise e consultando fontes…">Criar e analisar <span aria-hidden="true">→</span></button><span class="sr-only" role="status" aria-live="polite"></span></form>
+    </div>
+  {% endif %}
+</div>

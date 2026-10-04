@@ -67,6 +67,10 @@ Preservar as quatro entidades e seus relacionamentos: `Analysis` reúne empresas
 
 A API planejada cobre criação/listagem/consulta de análises, adição/remoção de concorrentes, edição de empresa/perfil, coleta e consulta dos eventos. Usar a tabela oficial de endpoints, sem criar contratos paralelos neste contexto. Regras consolidadas: [business-rules.md](business-rules.md).
 
+### Extensão opcional pós-MVP base: enriquecimento de eventos
+
+O enriquecimento individual de um `Event` persistido está implementado como extensão posterior ao MVP base; a chamada real à Gemini ainda não foi validada neste ambiente. Uma camada `AnalysisProvider`, separada de `SourceProvider`, oferece Gemini e mock; `Application / Services` coordena a ação sob demanda, e `EventAnalysis` armazena o resultado 1:1 sem modificar o dado coletado. A coleta e a visualização da timeline não dependem dessa integração. Não há análise automática, lote ou processamento em background. A REST API e a Web UI expõem a ação, com respostas estruturadas validadas e reanálise explícita.
+
 ## Já implementado — evidências no repositório
 
 - Base FastAPI, configuração por ambiente, engine e sessões SQLAlchemy síncronas, health checks, OpenAPI e Swagger.
@@ -87,7 +91,7 @@ O fluxo mockado local não depende dessas integrações. Comandos e evidências 
 
 ## Fora do MVP e roadmap
 
-Mapa Competitivo, crawling completo, perfil automático, descoberta/classificação de concorrentes, análise/enriquecimento por IA, alertas, workers, filas e processamento contínuo ficam fora. Autenticação e autorização também estão excluídas; não são dependências do MVP.
+Mapa Competitivo, crawling completo, perfil automático, descoberta/classificação de concorrentes, análise automática/em lote por IA, alertas, workers, filas e processamento contínuo ficam fora do MVP base. O enriquecimento individual de eventos foi implementado posteriormente como extensão opcional, sem alterar o critério de aceite original. Autenticação e autorização também estão excluídas; não são dependências do MVP.
 
 SPA, React, Vue, Next.js e aplicação frontend independente não fazem parte da arquitetura adotada.
 

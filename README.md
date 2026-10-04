@@ -55,7 +55,13 @@ O fluxo funcional do MVP está implementado no código atual:
 - Falha total/parcial por provider sem descartar resultados bem-sucedidos;
 - Templates Jinja2, Tailwind CSS compilado e HTMX local.
 
-O provider real do X não está integrado. O período é informado em cada coleta; o grupo não definiu período padrão. Autenticação, autorização, IA, workers, filas, alertas e funcionalidades V2–V5 continuam fora do MVP.
+O provider real do X não está integrado. O período é informado em cada coleta; o grupo não definiu período padrão. Autenticação, autorização, análise em lote, workers, filas, alertas e funcionalidades V2–V5 continuam fora do MVP.
+
+### Extensão opcional pós-MVP: análise de eventos por IA
+
+Como extensão posterior ao MVP base, o analista pode solicitar uma análise individual de um evento já persistido. A implementação usa `EventAnalysis` separado de `Event`, oferece Gemini estruturado e um provider mock explicitamente selecionável, e não participa da coleta nem do critério de aceite original.
+
+Configure `ANALYSIS_PROVIDER=gemini`, `GEMINI_MODEL` e `GEMINI_API_KEY` no `backend/.env` para usar Gemini; sem chave, a API retorna erro controlado e não troca silenciosamente para mock. Com `ANALYSIS_PROVIDER=mock`, a interface marca claramente o resultado como simulado. A chamada real à Gemini ainda não foi validada neste ambiente. A chave permanece local e nunca é persistida ou registrada em logs. Veja [backend/README.md](backend/README.md) para configuração e endpoints.
 
 ## Executar localmente
 

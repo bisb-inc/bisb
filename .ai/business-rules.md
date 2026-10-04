@@ -77,11 +77,19 @@ O MVP funcional é considerado concluído quando o analista consegue criar uma a
 
 O perfil manual e `search_term` são opcionais e não bloqueiam esse fluxo. A timeline deve permitir os filtros definidos acima. Health checks ou integração ao banco isoladamente não satisfazem o critério funcional.
 
-## Fora do MVP
+## Extensão opcional posterior ao MVP base: análise de eventos por IA
 
-Mapa Competitivo, crawling completo, geração automática de perfil, descoberta e classificação de concorrentes, análise/enriquecimento por IA, alertas, workers, filas, processamento contínuo, autenticação e autorização.
+O enriquecimento individual de `Event` é uma extensão implementada posteriormente, não requisito do critério de aceite original. A saída é armazenada em `EventAnalysis`, separada do acontecimento coletado. A análise é solicitada pelo Analista para um evento persistido, nunca durante a coleta ou carregamento da timeline.
 
-Enriquecimento automático do perfil, descoberta/classificação, IA e monitoramento contínuo pertencem às versões futuras. O perfil manual já pertence à V1.
+`EventAnalysis` é 1:1 com `Event` e contém resumo, categoria, intensidade de impacto competitivo, sentimento, relevância de 0 a 100, justificativa, provider, modelo, `is_mock` e timestamps. Categorias: `PRODUCT`, `PRICING`, `PARTNERSHIP`, `EXPANSION`, `FINANCIAL_RESULTS`, `REGULATORY`, `M_AND_A`, `PEOPLE`, `TECHNOLOGY`, `OTHER`. Impacto: `LOW`, `MEDIUM`, `HIGH` (intensidade, sem direção). Sentimento: `NEGATIVE`, `NEUTRAL`, `POSITIVE`.
+
+O resultado existente é reutilizado por padrão. Reanálise exige ação explícita; a atualização ocorre somente após resposta validada, preservando o resultado anterior em caso de falha. Gemini usa saída estruturada validada por schema. `ANALYSIS_PROVIDER=gemini` sem `GEMINI_API_KEY`, ou com erro de provider/validação, retorna erro controlado sem fallback simulado. `ANALYSIS_PROVIDER=mock` seleciona saída determinística identificada como simulada. Essa extensão não altera `Event` nem depende da coleta.
+
+## Fora do MVP base e roadmap
+
+Mapa Competitivo, crawling completo, geração automática de perfil, descoberta e classificação de concorrentes, análise em lote, alertas, workers, filas, processamento contínuo, autenticação e autorização.
+
+Enriquecimento automático do perfil, descoberta/classificação, outras funcionalidades de IA e monitoramento contínuo pertencem às versões futuras. O perfil manual já pertence à V1; o enriquecimento individual de eventos descrito acima é opcional e posterior ao MVP base.
 
 ## Pendências que podem permanecer abertas
 

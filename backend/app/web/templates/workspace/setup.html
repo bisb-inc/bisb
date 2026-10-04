@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Setup · {{ analysis.name }}{% endblock %}
+{% block content %}
+<section class="mx-auto max-w-4xl" aria-labelledby="setup-title">
+  <a href="/ui/analyses/{{ analysis.id }}" class="text-sm text-muted hover:text-ink">← Voltar ao workspace</a>
+  <header class="mb-8 mt-5 border-b border-line pb-5"><p class="eyebrow">Configuração</p><h1 id="setup-title" class="mt-2 text-2xl font-semibold">Setup da análise</h1><p class="mt-2 text-sm text-muted">Esses dados definem quais empresas e termos serão monitorados.</p></header>
+  {% if request.query_params.get('saved') %}<p class="mb-5 text-sm text-success" role="status">Alterações salvas.</p>{% endif %}
+  <section aria-labelledby="general-heading" class="border-b border-line pb-7"><h2 id="general-heading" class="text-lg font-semibold">Geral</h2><form action="/ui/analyses/{{ analysis.id }}/setup" method="post" class="mt-4 flex flex-wrap items-end gap-3"><div class="min-w-0 flex-1"><label class="field-label" for="analysis-name">Nome da análise</label><input id="analysis-name" name="name" value="{{ analysis.name }}" required maxlength="160" class="field-input"></div><button class="button-secondary" type="submit">Salvar nome</button></form></section>
+  <section id="competitors" aria-labelledby="companies-heading" class="border-b border-line py-7"><h2 id="companies-heading" class="text-lg font-semibold">Empresas monitoradas</h2><p class="mt-1 text-sm text-muted">A empresa TARGET é fixa; concorrentes podem ser adicionados ou removidos.</p>
+    {% for link in analysis.companies %}<div class="flex flex-wrap items-center justify-between gap-3 border-b border-line py-4"><div class="min-w-0"><p class="font-medium">{{ link.company.name }} <span class="ml-1 text-[11px] font-semibold text-accent">{{ link.role.value }}</span></p><p class="company-url mt-1 text-xs text-muted">{{ link.company.website }}</p></div>{% if link.role.value == 'COMPETITOR' %}<form action="/ui/analyses/{{ analysis.id }}/competitors/{{ link.company_id }}/remove" method="post"><button class="text-sm text-muted underline underline-offset-4 hover:text-danger" type="submit">Remover</button></form>{% endif %}</div>{% endfor %}
+    <form action="/ui/analyses/{{ analysis.id }}/competitors" method="post" class="mt-5 grid gap-3 sm:grid-cols-2"><div><label class="field-label" for="new-company-name">Adicionar concorrente · nome</label><input id="new-company-name" name="name" required maxlength="160" class="field-input"></div><div><label class="field-label" for="new-company-site">Site</label><input id="new-company-site" name="website" required type="url" class="field-input"></div><div><label class="field-label" for="new-company-search">Termo de busca · opcional</label><input id="new-company-search" name="search_term" class="field-input"></div><div class="flex items-end"><button class="button-secondary" type="submit">Adicionar concorrente</button></div></form>
+  </section>
+  <section id="profiles" aria-labelledby="profile-heading" class="pt-7"><p class="eyebrow">Dados opcionais</p><h2 id="profile-heading" class="mt-1 text-lg font-semibold">Perfil e termos de busca</h2><p class="mt-1 text-sm text-muted">O perfil básico enriquece o contexto, mas não é necessário para coletar acontecimentos.</p>
+    {% for link in analysis.companies %}{% set profile_company = link.company %}{% set profile_role = link.role %}{% include "partials/company_profile.html" %}{% endfor %}
+  </section>
+</section>
+{% endblock %}

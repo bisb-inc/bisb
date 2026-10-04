@@ -28,10 +28,21 @@ def get_analysis(session: Session, analysis_id: int) -> Analysis:
     return analysis
 
 
+def rename_analysis(session: Session, analysis_id: int, name: str) -> Analysis:
+    analysis = get_analysis(session, analysis_id)
+    cleaned = name.strip()
+    if not cleaned:
+        raise HTTPException(status_code=422, detail="O nome da análise é obrigatório")
+    analysis.name = cleaned
+    session.commit()
+    return get_analysis(session, analysis_id)
+
+
 def create_analysis(session: Session, data: AnalysisCreate) -> Analysis:
     try:
         target = get_or_create_company(session, data.target)
         analysis = Analysis(name=data.name)
+        session.add(analysis)
         analysis.companies.append(AnalysisCompany(company=target, role=CompanyRole.TARGET))
         for competitor_data in data.competitors:
             competitor = get_or_create_company(session, competitor_data)
@@ -42,7 +53,6 @@ def create_analysis(session: Session, data: AnalysisCreate) -> Analysis:
             analysis.companies.append(
                 AnalysisCompany(company=competitor, role=CompanyRole.COMPETITOR)
             )
-        session.add(analysis)
         session.commit()
         return get_analysis(session, analysis.id)
     except Exception:

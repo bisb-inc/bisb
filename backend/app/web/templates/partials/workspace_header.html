@@ -1,0 +1,16 @@
+{% set target_link = (analysis.companies|selectattr('role.value', 'equalto', 'TARGET')|first) %}
+{% set competitor_count = analysis.companies|length - 1 %}
+<header class="mb-7 border-b border-line pb-5">
+  <div class="flex flex-wrap items-start justify-between gap-5">
+    <div class="min-w-0">
+      <p class="eyebrow">{{ target_link.company.name if target_link else 'Monitoramento' }} <span aria-hidden="true">·</span> {{ competitor_count }} concorrentes</p>
+      <h1 class="mt-2 truncate text-2xl font-semibold tracking-tight sm:text-3xl">{{ analysis.name }}</h1>
+      <p class="workspace-metadata mt-2 text-sm text-muted"><span id="workspace-period">{% if from_date and to_date %}Período {{ from_date.strftime('%d/%m/%Y') }}–{{ to_date.strftime('%d/%m/%Y') }}{% else %}Timeline comparativa{% endif %}</span>{% if latest_received %}<span aria-hidden="true"> · </span><span id="latest-received">Evento mais recente recebido {{ latest_received.collected_at.strftime('%d/%m/%Y %H:%M UTC') }}</span>{% else %}<span id="latest-received"></span>{% endif %}</p>
+    </div>
+    <div class="workspace-actions flex items-center gap-3">
+      <a href="/ui/analyses/{{ analysis.id }}/setup" class="button-secondary">Setup</a>
+      <a href="/ui/analyses/{{ analysis.id }}?view=overview#collect" class="button-primary">Atualizar monitoramento</a>
+    </div>
+  </div>
+  {% include "partials/workspace_nav.html" %}
+</header>
