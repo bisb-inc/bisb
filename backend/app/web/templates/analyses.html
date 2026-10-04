@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Análises · Competitive Monitor{% endblock %}
+{% block content %}
+<section class="mx-auto max-w-4xl" aria-labelledby="page-title">
+  <header class="mb-8 flex flex-wrap items-end justify-between gap-5 border-b border-line pb-6">
+    <div>
+      <p class="eyebrow">Monitoramento</p>
+      <h1 id="page-title" class="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">Análises</h1>
+      <p class="mt-3 max-w-xl text-sm leading-6 text-muted">Acompanhe empresas e concorrentes em uma timeline única de acontecimentos.</p>
+    </div>
+    <a href="/ui/analyses/new" class="button-primary">Nova análise <span aria-hidden="true">＋</span></a>
+  </header>
+  {% if analyses %}
+    <div class="mb-3 flex items-center justify-between text-xs text-muted">
+      <span>Suas análises</span><span>{{ analyses|length }} no total</span>
+    </div>
+    <ul class="divide-y divide-line border-y border-line">
+      {% for analysis in analyses %}
+        {% set target = (analysis.companies|selectattr('role.value', 'equalto', 'TARGET')|first) %}
+        <li class="group flex flex-wrap items-center justify-between gap-4 py-5">
+          <div class="min-w-0">
+            <h2 class="truncate text-base font-semibold"><a href="/ui/analyses/{{ analysis.id }}" class="focus-ring rounded-sm hover:text-accent">{{ analysis.name }}</a></h2>
+            <p class="mt-1 text-sm text-muted">{{ target.company.name if target else 'Empresa principal não definida' }} <span aria-hidden="true">·</span> {{ analysis.companies|length - 1 }} concorrentes</p>
+          </div>
+          <a href="/ui/analyses/{{ analysis.id }}" class="shrink-0 text-sm font-semibold text-accent hover:underline">Abrir análise <span aria-hidden="true">→</span></a>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <div class="border-y border-line py-12 sm:py-16">
+      <p class="eyebrow">Comece pelo mercado que acompanha</p>
+      <h2 class="mt-2 text-xl font-semibold">Nenhuma análise criada</h2>
+      <p class="mt-2 max-w-lg text-sm leading-6 text-muted">Defina uma empresa principal e seus concorrentes. A primeira coleta abre uma timeline pronta para explorar.</p>
+    </div>
+  {% endif %}
+</section>
+{% endblock %}

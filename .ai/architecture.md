@@ -67,31 +67,31 @@ Preservar as quatro entidades e seus relacionamentos: `Analysis` reúne empresas
 
 A API planejada cobre criação/listagem/consulta de análises, adição/remoção de concorrentes, edição de empresa/perfil, coleta e consulta dos eventos. Usar a tabela oficial de endpoints, sem criar contratos paralelos neste contexto. Regras consolidadas: [business-rules.md](business-rules.md).
 
+### Extensão opcional pós-MVP base: enriquecimento de eventos
+
+O enriquecimento individual de um `Event` persistido está implementado como extensão posterior ao MVP base; a chamada real à Gemini ainda não foi validada neste ambiente. Uma camada `AnalysisProvider`, separada de `SourceProvider`, oferece Gemini e mock; `Application / Services` coordena a ação sob demanda, e `EventAnalysis` armazena o resultado 1:1 sem modificar o dado coletado. A coleta e a visualização da timeline não dependem dessa integração. Não há análise automática, lote ou processamento em background. A REST API e a Web UI expõem a ação, com respostas estruturadas validadas e reanálise explícita.
+
 ## Já implementado — evidências no repositório
 
-- [app/main.py](../backend/app/main.py): aplicação FastAPI, `create_app`, engine no ciclo de vida e liberação ao encerrar.
-- [config.py](../backend/app/core/config.py): configuração tipada por ambiente e arquivo local.
-- [session.py](../backend/app/db/session.py): engine SQLAlchemy síncrono, sessões por requisição e limites de conexão/consulta/pool.
-- [health.py](../backend/app/api/routes/health.py): `GET /health` sem banco e `GET /health/ready` com `SELECT 1`, respostas 200/503; OpenAPI e Swagger pela aplicação.
-- [base.py](../backend/app/db/base.py) e [ambiente Alembic](../backend/migrations/env.py): infraestrutura ORM/migrações, sem modelos de negócio ou revisões em `migrations/versions/`.
-- [Compose](../backend/compose.yaml): PostgreSQL local com volume persistente e health check; API executada localmente.
-- Dependências e ferramentas de testes/lint configuradas; testes da base presentes, sem nova execução nesta revisão.
+- Base FastAPI, configuração por ambiente, engine e sessões SQLAlchemy síncronas, health checks, OpenAPI e Swagger.
+- Entidades `Analysis`, `Company`, `AnalysisCompany` e `Event`, TARGET único por análise, índice de deduplicação e migração Alembic.
+- Application / Services compartilhados por Web Routes e REST API Routes, sem HTTP interno à própria API.
+- Web UI Jinja2 com abas Monitoramento e Perfil da empresa, HTMX local e Tailwind compilado localmente.
+- Provider real GNews opcional via `GNEWS_API_KEY`, mocks para notícias/X sem chave e coleta com falha parcial, persistência de eventos e timeline com filtros.
+- Aplicação FastAPI e PostgreSQL via Compose, testes funcionais com SQLite isolado e teste opt-in de fluxo Web UI com PostgreSQL real.
 
-## Planejado para o MVP — ainda não implementado
+O diretório `frontend/` contém documentação da interface; o código Web UI está em `backend/app/web/` e os assets servidos em `backend/app/static/`.
 
-- Web UI integrada com Jinja2, HTML5, Tailwind CSS e HTMX; JavaScript vanilla apenas quando necessário.
-- As quatro entidades de negócio e suas migrações.
-- Application / Services compartilhados, Web Routes e endpoints REST de negócio.
-- Providers reais/mockados, coleta, deduplicação e persistência de eventos.
-- Timeline com filtros e demais fluxos da interface.
+## Planejado para o MVP — pendente de integração
 
-O diretório frontend contém documentação, sem aplicação web. Sua existência não implica uma aplicação independente: a Web UI planejada será servida pelo próprio FastAPI e ainda não está implementada.
+- Plano e limites operacionais da integração GNews para além do uso local atual.
+- Provider real do X, condicionado à viabilidade de acesso.
 
-A base existente deve ser preservada e ampliada. A prontidão do banco não significa que as tabelas de negócio ou o fluxo competitivo existam.
+O fluxo mockado local não depende dessas integrações. Comandos e evidências verificadas estão no [README do backend](../backend/README.md); não confundir código planejado com integração externa validada.
 
 ## Fora do MVP e roadmap
 
-Mapa Competitivo, crawling completo, perfil automático, descoberta/classificação de concorrentes, análise/enriquecimento por IA, alertas, workers, filas e processamento contínuo ficam fora. Autenticação e autorização também estão excluídas; não são dependências do MVP.
+Mapa Competitivo, crawling completo, perfil automático, descoberta/classificação de concorrentes, análise automática/em lote por IA, alertas, workers, filas e processamento contínuo ficam fora do MVP base. O enriquecimento individual de eventos foi implementado posteriormente como extensão opcional, sem alterar o critério de aceite original. Autenticação e autorização também estão excluídas; não são dependências do MVP.
 
 SPA, React, Vue, Next.js e aplicação frontend independente não fazem parte da arquitetura adotada.
 
@@ -101,4 +101,4 @@ A visão estratégica reserva V2 para enriquecimento automático do perfil, V3 p
 
 - Período padrão de coleta pendente; 7 dias é somente uma proposta.
 - Contratos detalhados, validações e decisões operacionais ainda não especificados estão listados em [business-rules.md](business-rules.md).
-- Escolha do provider de notícias e viabilidade dos providers reais, incluindo acesso ao X. Providers mockados compatíveis devem permitir o fluxo completo sem integrações externas.
+- Viabilidade do provider real do X. O GNews real é opcional por configuração; providers mockados compatíveis mantêm o fluxo completo sem credenciais externas.

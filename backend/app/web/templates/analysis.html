@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}{{ analysis.name }} · Timeline{% endblock %}
+{% block content %}
+{% include "partials/workspace_header.html" %}
+<section aria-labelledby="timeline-heading">
+  <div class="flex flex-wrap items-end justify-between gap-4 border-b border-line pb-4">
+    <div><p class="eyebrow">Exploração</p><h2 id="timeline-heading" class="mt-1 text-xl font-semibold">Timeline</h2></div>
+    <span class="timeline-sort-note min-w-0 text-sm text-muted">Ordenados do mais recente ao mais antigo</span>
+  </div>
+  <form id="timeline-filters" class="grid gap-3 border-b border-line py-4 sm:grid-cols-2 lg:grid-cols-4" action="/ui/analyses/{{ analysis.id }}" method="get" hx-get="/ui/analyses/{{ analysis.id }}/timeline" hx-target="#event-list" hx-swap="outerHTML" hx-push-url="true" hx-indicator="#filter-loading">
+    <input type="hidden" name="view" value="timeline">
+    <div><label for="filter-company" class="field-label">Empresa</label><select id="filter-company" name="company" class="field-input"><option value="">Todas</option>{% for link in analysis.companies %}<option value="{{ link.company_id }}" {% if selected_company == link.company_id %}selected{% endif %}>{{ link.company.name }} · {{ link.role.value }}</option>{% endfor %}</select></div>
+    <div><label for="filter-source" class="field-label">Fonte</label><select id="filter-source" name="source" class="field-input"><option value="">Todas</option>{% for item in sources %}<option value="{{ item.value }}" {% if selected_source == item %}selected{% endif %}>{{ item.value }}</option>{% endfor %}</select></div>
+    <div><label for="filter-from" class="field-label">De</label><input id="filter-from" name="from_date" type="date" value="{{ from_date.isoformat() if from_date else '' }}" class="field-input"></div>
+    <div><label for="filter-to" class="field-label">Até</label><input id="filter-to" name="to_date" type="date" value="{{ to_date.isoformat() if to_date else '' }}" class="field-input"></div>
+    <div class="flex items-center gap-4 sm:col-span-2 lg:col-span-4"><button class="button-secondary" type="submit">Aplicar filtros</button><a href="/ui/analyses/{{ analysis.id }}?view=timeline" class="text-sm text-muted underline underline-offset-4">Limpar filtros</a><span id="filter-loading" class="htmx-indicator text-xs text-muted" role="status">Atualizando…</span></div>
+  </form>
+  <div class="pt-1" aria-live="polite">{% include "partials/timeline.html" %}</div>
+</section>
+{% endblock %}

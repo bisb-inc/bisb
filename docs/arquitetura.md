@@ -1,15 +1,15 @@
 # Arquitetura do MVP — Entrega da Aula 1
 
 Este é o documento oficial e autocontido da entrega de arquitetura da Aula 1 do **Competitive Monitor**. Consolida o escopo, os usuários, os componentes, os dados, a API, as tecnologias e os fluxos do MVP. A [proposta inicial](../competitive_monitor_mvp.md) permanece como referência complementar.
-A base técnica do backend está implementada com FastAPI, PostgreSQL 16, SQLAlchemy e
-Alembic. A Web UI integrada, o modelo e os endpoints de negócio abaixo permanecem planejados.
+A arquitetura descrita neste documento foi implementada e validada localmente: o monólito FastAPI serve a Web UI Jinja2/HTMX e a REST API por uma camada compartilhada de serviços, com persistência PostgreSQL e providers mockados. A implementação real e seus comandos de execução estão em [backend/README.md](../backend/README.md). Providers reais e o período padrão da coleta permanecem pendentes.
 
 ## Base executável
 
 A API expõe `GET /health` (HTTP 200, sem consultar o banco) e `GET /health/ready`
 (HTTP 200 ao executar `SELECT 1`, HTTP 503 se o banco estiver indisponível).
-Configuração por ambiente, documentação OpenAPI, testes básicos e infraestrutura de
-migrações estão disponíveis. Ainda não há tabelas de negócio. Consulte
+Configuração por ambiente, documentação OpenAPI, tabelas de negócio, migrações,
+testes funcionais e infraestrutura estão disponíveis. A Web UI e a coleta mockada
+também foram validadas localmente. Consulte
 [backend/README.md](../backend/README.md) para execução local.
 
 O MVP permite acompanhar uma empresa-alvo e seus concorrentes em uma **timeline única** de notícias e publicações do X. Cada empresa pode ter um **perfil básico**, preenchido manualmente, que dá contexto à comparação.
@@ -140,7 +140,7 @@ Tipos físicos e índices serão definidos na implementação do banco.
 | Interações | HTMX desde o início; JavaScript vanilla apenas quando necessário |
 | Integrações | GNews ou provider equivalente; X Provider ou Mock Provider |
 | Configuração | Variáveis de ambiente e Pydantic Settings |
-| Ambiente local | Banco via Docker Compose |
+| Ambiente local | Aplicação FastAPI e PostgreSQL via Docker Compose |
 | Diagramas e documentação | Markdown e Mermaid |
 
 ## 7. Fluxos principais
@@ -246,6 +246,23 @@ Mapa Competitivo, descoberta automática de concorrentes, geração automática 
 **Critério de aceite:** O MVP funcional é considerado concluído quando o analista consegue criar uma análise, informar empresa-alvo e ao menos um concorrente, executar uma coleta com providers reais ou mockados, persistir os eventos e consultar a timeline.
 
 Os concorrentes podem ser adicionados após a criação da análise; a validação do fluxo completo exige ao menos um concorrente.
+
+## Extensão opcional implementada após o MVP base — análise de eventos por IA
+
+A análise por IA permaneceu fora do escopo original da Aula 1 e do critério de aceite acima. Posteriormente, foi implementada como extensão opcional para enriquecer individualmente um `Event` já persistido; a chamada real à Gemini ainda não foi validada neste ambiente. Ela não avalia o evento em relação a um TARGET específico, não executa durante a coleta e não é necessária para o funcionamento da timeline.
+
+Os resultados são armazenados em `EventAnalysis`, entidade 1:1 separada de `Event`, com resumo, categoria, intensidade do impacto competitivo, sentimento, score de relevância, justificativa, provider/modelo, marcador de mock e timestamps. Categorias: `PRODUCT`, `PRICING`, `PARTNERSHIP`, `EXPANSION`, `FINANCIAL_RESULTS`, `REGULATORY`, `M_AND_A`, `PEOPLE`, `TECHNOLOGY`, `OTHER`; impacto: `LOW`, `MEDIUM`, `HIGH`; sentimento: `NEGATIVE`, `NEUTRAL`, `POSITIVE`; score inteiro de 0 a 100.
+
+`AnalysisProvider` abstrai Gemini e mock, independentemente de `SourceProvider`. A seleção é explícita por `ANALYSIS_PROVIDER`; Gemini usa `GEMINI_API_KEY` e `GEMINI_MODEL` configurável (padrão `gemini-3.8-flash`) com saída estruturada validada. Sem chave ou em caso de erro, a operação informa falha sem criar resultado simulado, alterar `Event` ou apagar análise anterior. `ANALYSIS_PROVIDER=mock` produz resultado determinístico identificado como simulado. Não há análise automática, lote, filas ou workers.
+
+Endpoints adicionais desta extensão:
+
+| Método | Rota | Finalidade |
+| --- | --- | --- |
+| POST | `/events/{event_id}/analysis?force=false` | Criar análise ou reutilizar a existente; `force=true` solicita reanálise explícita |
+| GET | `/events/{event_id}/analysis` | Consultar resultado persistido |
+
+Na Web UI, a ação **Analisar com IA** fica disponível por evento na timeline; resultado e erros aparecem no fragmento HTMX. A extensão não altera os endpoints nem os critérios de aceite originais da entrega.
 
 ## Equipe
 

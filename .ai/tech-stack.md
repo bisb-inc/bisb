@@ -9,22 +9,22 @@ Referência técnica do projeto. Prioridade: [arquitetura oficial](../docs/arqui
 | Backend | Python 3.14, FastAPI e Uvicorn | Implementado/configurado |
 | Configuração | Pydantic Settings, variáveis de ambiente e arquivo local .env | Implementado/configurado |
 | Persistência — infraestrutura | PostgreSQL 16, SQLAlchemy síncrono e psycopg | Implementado/configurado |
-| Migrações — infraestrutura | Alembic, ainda sem revisões de negócio | Implementado/configurado |
+| Migrações | Alembic com revisão das entidades do MVP | Implementado/configurado |
 | Dependências | uv, pyproject.toml e uv.lock | Implementado/configurado |
 | Testes da base | pytest e HTTPX/TestClient | Implementado/configurado |
 | Lint/formatação | Ruff | Implementado/configurado |
-| Ambiente local | Banco via Docker Compose; API local com Uvicorn | Implementado/configurado |
+| Ambiente local | Aplicação FastAPI e PostgreSQL via Docker Compose; execução alternativa da API no host com Uvicorn | Implementado/configurado |
 | Comunicação — base | API REST com health checks | Implementado/configurado |
 | Documentação | Markdown e Mermaid | Implementado/configurado |
-| Persistência de negócio | Modelos e migrações das entidades do MVP | Planejado para o MVP |
-| Endpoints de negócio | API REST para análises, empresas, coleta e eventos | Planejado para o MVP |
-| Web UI — renderização | Jinja2 e HTML5, renderizados pelo próprio FastAPI | Confirmado / planejado para implementação; ainda não configurado |
-| Web UI — estilização | Tailwind CSS compilado para CSS estático | Confirmado / planejado para implementação; ainda não configurado |
-| Web UI — interações | HTMX; JavaScript vanilla apenas quando necessário | Confirmado / planejado para implementação; ainda não configurado |
-| Notícias | Integração com GNews ou equivalente | Planejado para o MVP |
-| X/Twitter | X Provider opcional conforme viabilidade | Planejado para o MVP |
-| Integração real/mock | Mock Providers compatíveis para execução local e demonstração sem credenciais externas | Planejado para o MVP |
-| Provider real de notícias | Escolha definitiva entre GNews ou equivalente | Pendente de decisão |
+| Persistência de negócio | Modelos e migrações das entidades do MVP | Implementado/configurado |
+| Endpoints de negócio | API REST para análises, empresas, coleta e eventos | Implementado/configurado |
+| Enriquecimento opcional de eventos | Google GenAI SDK (`google-genai`), schema Pydantic estruturado e `EventAnalysis` | Implementado como extensão opcional; chamada real à Gemini ainda não validada neste ambiente |
+| Web UI — renderização | Jinja2 e HTML5, renderizados pelo próprio FastAPI | Implementado/configurado |
+| Web UI — estilização | Tailwind CSS compilado para CSS estático | Implementado/configurado |
+| Web UI — interações | HTMX local; JavaScript vanilla apenas quando necessário | Implementado/configurado |
+| Notícias | GNews real quando `GNEWS_API_KEY` está configurada; mock como fallback local | GNews implementado; chave fornecida pelo ambiente |
+| X/Twitter | Mock X; X Provider real opcional conforme viabilidade | Mock implementado; provider real pendente |
+| Assets da Web UI | Compilação Tailwind e cópia local de HTMX por ferramentas npm | Implementado/configurado |
 | API do X | Viabilidade de acesso e uso da integração real | Pendente de decisão |
 | Período padrão da coleta | 7 dias é apenas uma proposta | Pendente de decisão |
 
@@ -40,7 +40,7 @@ Mock Providers fazem parte da estratégia técnica do MVP e atendem à mesma abs
 - Web Routes e REST API Routes reutilizam diretamente a mesma camada `Application / Services`.
 - A aplicação não deve fazer HTTP interno para sua própria REST API apenas para reutilizar lógica.
 
-Web UI e REST API são duas interfaces para os mesmos serviços no monólito modular FastAPI. A Web UI ainda não está implementada.
+Web UI e REST API são duas interfaces para os mesmos serviços no monólito modular FastAPI.
 
 ## Assets da Web UI
 
@@ -70,18 +70,21 @@ Versões abaixo registradas em [uv.lock](../backend/uv.lock), não inferidas da 
 | pytest | 9.1.1 |
 | httpx | 0.28.1 |
 | ruff | 0.16.9 |
+| google-genai | 1.75.0 |
 
-Não há versão exata de uv ou Docker Compose fixada nos manifests. Não inventar versões. Não alterar dependências sem necessidade técnica e manter o lockfile consistente.
+Versões dos assets confirmadas no [package-lock.json](../backend/package-lock.json): Tailwind CSS `4.3.0`, `@tailwindcss/cli` `4.3.0` e HTMX `2.0.11`. Versões de Jinja2 `3.1.6` e `python-multipart` `0.0.32` estão no `uv.lock`.
 
-Jinja2, Tailwind CSS e HTMX são tecnologias confirmadas para o MVP, mas ainda não estão configuradas nos manifests, no lockfile ou nos assets do projeto. Não há versões verificáveis dessas dependências a registrar. HTML5 e JavaScript vanilla compõem a decisão de interface, cujo código ainda não existe.
+A imagem da aplicação instala uv `0.10.4`, fixado no Dockerfile. Não há versão exata de Docker Compose fixada no repositório. Não inventar outras versões. Não alterar dependências sem necessidade técnica e manter o lockfile consistente.
+
+Jinja2, Tailwind CSS e HTMX estão configurados como dependências/assets da Web UI. HTML5 e JavaScript vanilla compõem a interface; JavaScript adicional não é requisito do MVP. Node/npm são ferramentas de build, não runtime da aplicação.
 
 ## Configuração existente a preservar
 
-- Banco em `127.0.0.1:5433`, volume persistente e health check do PostgreSQL.
+- Compose executa a aplicação e o PostgreSQL; o banco usa volume persistente e health check. Para execução no host, PostgreSQL é publicado em `127.0.0.1:5433`; entre containers, o backend usa `db:5432`.
 - `APP_NAME`, `ENVIRONMENT`, `LOG_LEVEL` e `DATABASE_URL` no Settings; variáveis do processo precedem `backend/.env`.
 - Driver `postgresql+psycopg://`; credenciais reais fora do código/versionamento.
 - Sessões síncronas com encerramento por requisição; migrações explícitas.
-- API local documentada na porta 8000, com Swagger e OpenAPI.
+- A aplicação publica a Web UI e a API em `127.0.0.1:7778` no host; dentro do container o Uvicorn atende na porta 8000. Swagger e OpenAPI permanecem disponíveis.
 
 Instruções de execução: [backend/README.md](../backend/README.md).
 
@@ -92,8 +95,8 @@ A execução local é requisito do MVP. Implantação/deploy permanece fora do e
 ## Pendências do grupo
 
 - Período padrão de coleta; 7 dias ainda não confirmado.
-- Escolha do provider de notícias e viabilidade do X real; credenciais e limites operacionais quando aplicáveis.
+- Plano/limites operacionais do GNews; viabilidade e credenciais do X real.
 - Contratos e validações pendentes em [business-rules.md](business-rules.md).
 - Cenário final de demonstração; bancos digitais permanece uma sugestão estratégica.
 
-O modo mock deve viabilizar o MVP independentemente da viabilidade das integrações reais. Preservar a Web UI integrada definida acima, sem introduzir serviços de IA, autenticação, filas ou workers.
+O modo mock deve viabilizar o MVP independentemente da viabilidade das integrações reais. A análise individual de eventos via Gemini/mock é uma extensão opcional posterior ao MVP base, selecionada por `ANALYSIS_PROVIDER`; sem `GEMINI_API_KEY`, o modo `gemini` retorna erro controlado e não troca automaticamente para mock. A chave é segredo de runtime e nunca deve ser persistida ou registrada em logs. Essa extensão não participa da coleta e não introduz filas ou workers.

@@ -1,0 +1,30 @@
+<div class="mt-4 border-t border-line pt-3" id="event-analysis-{{ event.id }}" aria-live="polite">
+  {% if error %}<p class="text-sm text-danger" role="alert">Não foi possível analisar este acontecimento: {{ error }}</p>{% endif %}
+  {% if event_analysis %}
+    <details class="analysis-details">
+      <summary class="flex cursor-pointer list-none flex-wrap items-center gap-2 text-sm font-medium text-muted hover:text-ink">
+        <span aria-hidden="true">＋</span><span>{% if event_analysis.is_mock %}Análise simulada{% else %}Análise Gemini{% endif %}</span>
+        {% if event_analysis.is_mock %}<span class="mock-badge">Simulada</span>{% endif %}
+        <span class="ml-auto text-xs tabular-nums">Relevância {{ event_analysis.relevance_score }}/100</span>
+      </summary>
+      <div class="mt-4 max-w-3xl border-l-2 border-accent pl-4">
+        <p class="text-sm leading-6 text-ink">{{ event_analysis.summary }}</p>
+        <dl class="mt-3 grid gap-x-6 gap-y-2 text-xs sm:grid-cols-2">
+          <div><dt class="text-muted">Categoria</dt><dd class="mt-0.5 font-medium">{{ event_analysis.category.value }}</dd></div>
+          <div><dt class="text-muted">Impacto competitivo</dt><dd class="mt-0.5 font-medium">{{ event_analysis.competitive_impact.value }}</dd></div>
+          <div><dt class="text-muted">Sentimento</dt><dd class="mt-0.5 font-medium">{{ event_analysis.sentiment.value }}</dd></div>
+          <div><dt class="text-muted">Relevância</dt><dd class="mt-0.5 font-medium">{{ event_analysis.relevance_score }}/100</dd></div>
+        </dl>
+        <p class="mt-3 text-xs leading-5 text-muted"><span class="font-semibold text-ink">Justificativa:</span> {{ event_analysis.justification }}</p>
+        {% if event_analysis.is_mock %}<p class="mt-2 text-xs text-warning">Conteúdo de análise simulado; não representa avaliação Gemini.</p>{% endif %}
+        <form action="/ui/events/{{ event.id }}/analysis?force=true" method="post" hx-post="/ui/events/{{ event.id }}/analysis?force=true" hx-target="#event-analysis-{{ event.id }}" hx-swap="outerHTML" hx-indicator="#analysis-loading-{{ event.id }}" class="mt-3">
+          <button class="text-xs font-medium text-accent underline underline-offset-4" type="submit" hx-disabled-elt="this">Reanalisar</button><span id="analysis-loading-{{ event.id }}" class="htmx-indicator ml-2 text-xs text-muted" role="status">Analisando…</span>
+        </form>
+      </div>
+    </details>
+  {% else %}
+    <form action="/ui/events/{{ event.id }}/analysis" method="post" hx-post="/ui/events/{{ event.id }}/analysis" hx-target="#event-analysis-{{ event.id }}" hx-swap="outerHTML" hx-indicator="#analysis-loading-{{ event.id }}" class="flex flex-wrap items-center gap-3">
+      <button class="text-sm font-medium text-accent hover:underline" type="submit" hx-disabled-elt="this">{% if error %}Tentar novamente{% else %}Analisar com IA{% endif %}</button><span id="analysis-loading-{{ event.id }}" class="htmx-indicator text-xs text-muted" role="status">Analisando acontecimento…</span>
+    </form>
+  {% endif %}
+</div>

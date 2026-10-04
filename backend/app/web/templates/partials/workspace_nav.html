@@ -1,0 +1,5 @@
+<nav class="mt-7 flex gap-6 border-b border-line" aria-label="Seções da análise">
+  {% for key, label in [('overview', 'Visão geral'), ('timeline', 'Timeline'), ('companies', 'Empresas')] %}
+    <a class="tab-link {% if view == key %}tab-link-active{% endif %}" href="/ui/analyses/{{ analysis.id }}?view={{ key }}{% if from_date and to_date %}&amp;from_date={{ from_date.isoformat() }}&amp;to_date={{ to_date.isoformat() }}{% endif %}" {% if view == key %}aria-current="page"{% endif %}>{{ label }}</a>
+  {% endfor %}
+</nav>

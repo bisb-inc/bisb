@@ -1,0 +1,3 @@
+<div id="company-counts" {% if oob_counts %}hx-swap-oob="outerHTML"{% endif %} class="contents">
+  {% for item in company_counts.values() %}<div class="flex items-baseline justify-between gap-3 py-3"><dt class="truncate text-sm text-muted">{{ item.company.name }}{% if item.role.value == 'TARGET' %} <span class="text-[10px] font-semibold text-accent">TARGET</span>{% endif %}</dt><dd class="text-sm font-semibold tabular-nums">{{ item.count }}</dd></div>{% endfor %}
+</div>

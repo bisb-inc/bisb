@@ -1,105 +1,143 @@
-# Backend
+# Backend e Web UI
 
-Base executável da API REST do Competitive Monitor, com Python 3.14, FastAPI,
-SQLAlchemy 2, psycopg 3 e Alembic. Dependências gerenciadas por uv e PostgreSQL 16
-executado pelo Docker Compose.
+O backend é um monólito modular FastAPI que serve a REST API e a Web UI Jinja2/HTMX. A interface HTML é servida em `/ui/analyses`; `/` redireciona para a lista. Os endpoints REST estão em `/docs` e seguem [docs/arquitetura.md](../docs/arquitetura.md). Ambas as interfaces chamam os mesmos serviços Python, sem HTTP interno para a própria API.
 
-Responsabilidades de negócio previstas para as próximas entregas:
+## Requisitos e modos de execução
 
-- Gerenciar análises, empresas (com perfil básico) e seus vínculos.
-- Persistir `Analysis`, `Company`, `AnalysisCompany` e `Event`.
-- Orquestrar a coleta por empresa.
-- Integrar providers de notícias e X/mock.
-- Normalizar resultados e disponibilizar eventos para a timeline.
+O projeto oferece dois modos locais: aplicação e PostgreSQL em containers Docker, ou aplicação no host com somente o PostgreSQL em Docker Compose. Docker Desktop com containers Linux é necessário para ambos. O modo no host também requer Python 3.14, uv e Node.js/npm para compilar assets; Node não é runtime da aplicação.
 
-Consulte os [endpoints e o modelo inicial](../docs/arquitetura.md).
-Cadastros, tabelas de negócio, coleta e providers ainda não foram implementados.
-
-## Executar localmente
-
-Pré-requisitos: uv, Python 3.14 (também gerenciável pelo uv) e Docker Desktop
-em execução com containers Linux. Execute os comandos abaixo na pasta `backend/`.
+Na primeira configuração, a partir de `backend/`, copie o exemplo sem sobrescrever um `.env` existente:
 
 ```powershell
-Copy-Item .env.example .env
-uv sync --locked
-docker compose --env-file .env up -d --wait
-uv run alembic upgrade head
-uv run uvicorn app.main:app --reload
+if (-not (Test-Path .env)) { Copy-Item .env.example .env }
 ```
 
-Copie o `.env.example` somente na primeira configuração para preservar seus ajustes.
-Configure o interpretador do editor como `backend/.venv/Scripts/python.exe` no Windows.
+### Aplicação e PostgreSQL em Docker Compose
 
-A API atende em `http://127.0.0.1:8000`, com Swagger em `/docs` e contrato em
-`/openapi.json`. O PostgreSQL atende em `127.0.0.1:5433`, com volume persistente.
-O Compose cria apenas o banco; a API roda no ambiente virtual local.
+```powershell
+docker compose --env-file .env up -d --build
+```
+
+O Compose constrói a imagem da aplicação, compila Tailwind e disponibiliza HTMX como asset local, aguarda o PostgreSQL ficar saudável, executa as migrações Alembic e inicia o FastAPI. A Web UI fica em `http://127.0.0.1:7778/`, a REST API em `/docs` e o PostgreSQL em `127.0.0.1:5433`. O endereço publicado da aplicação é apenas local. Acompanhe os serviços com `docker compose --env-file .env ps` e `docker compose --env-file .env logs -f app`.
+
+O serviço `migrate` executa antes da aplicação. O container do backend conecta-se ao banco pelo endereço interno `db:5432`; a configuração `DATABASE_URL` no `.env` continua apontando para `127.0.0.1:5433` no modo host. O volume `postgres_data` preserva os dados ao remover os containers com `docker compose down`.
+
+### Aplicação no host e PostgreSQL em Docker
+
+```powershell
+uv sync --locked
+npm ci
+npm run build
+docker compose --env-file .env up -d --wait db
+uv run --locked alembic upgrade head
+uv run --locked uvicorn app.main:app --reload --port 7778
+```
+
+A Web UI fica em `http://127.0.0.1:7778/`, a REST API em `/docs` e o PostgreSQL em `127.0.0.1:5433`. `npm run build` compila `app/static/css/input.css` e copia HTMX e sua licença para `app/static/js/`; os arquivos são servidos por `/static/` sem depender de CDN.
+
+Não execute os dois modos simultaneamente: ambos usam o mesmo volume e publicam a porta 7778.
 
 ## Configuração
 
 | Variável | Uso |
 | --- | --- |
-| `APP_NAME` | Nome da API; padrão `Competitive Monitor` |
-| `ENVIRONMENT` | Identificação do ambiente; padrão `development` |
-| `LOG_LEVEL` | `DEBUG`, `INFO`, `WARNING`, `ERROR` ou `CRITICAL`; padrão `INFO` |
-| `DATABASE_URL` | Obrigatória; URL com driver `postgresql+psycopg://` |
+| `APP_NAME` | Nome da aplicação; padrão `Competitive Monitor` |
+| `ENVIRONMENT` | Ambiente; padrão `development` |
+| `LOG_LEVEL` | Nível de log; padrão `INFO` |
+| `DATABASE_URL` | URL PostgreSQL `postgresql+psycopg://`; obrigatória |
+| `GNEWS_API_KEY` | Chave opcional; quando configurada, ativa notícias reais do GNews. Mantenha-a somente no `.env` local. |
+| `ANALYSIS_PROVIDER` | Seleção explícita `gemini` ou `mock`; `.env.example` usa `mock`. |
+| `GEMINI_MODEL` | Modelo Gemini; padrão `gemini-3.8-flash`. |
+| `GEMINI_API_KEY` | Chave opcional, necessária quando `ANALYSIS_PROVIDER=gemini`; nunca a registre ou inclua em imagens/documentos. |
 | `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB` | Inicialização do banco pelo Compose |
 
-A aplicação lê `backend/.env`; variáveis do processo têm prioridade. O Alembic usa
-a mesma configuração. As credenciais do exemplo são apenas para desenvolvimento local.
-Mantenha `DATABASE_URL` consistente com as variáveis do Compose. Alterar estas variáveis
-não altera usuários/senhas de um volume PostgreSQL já inicializado.
-Arquivos `.env`, ambientes virtuais e caches são ignorados pelo Git.
+A aplicação lê `backend/.env`; variáveis do processo têm prioridade. Mantenha a URL consistente com as credenciais usadas para inicializar o volume. Alterar os valores no `.env` não altera usuários/senhas de um volume já criado. Os valores do `.env.example` destinam-se somente ao desenvolvimento local.
 
-## Health checks
+## Fluxo demonstrável e modo mock
 
-| Rota | Resultado |
-| --- | --- |
-| `GET /health` | HTTP 200, `{"status":"ok"}`; não acessa o banco |
-| `GET /health/ready` | Executa `SELECT 1`; HTTP 200, `{"status":"ok","database":"ok"}` |
-| `GET /health/ready` com falha no banco | HTTP 503, `{"status":"unavailable","database":"unavailable"}` |
+1. Abra a Web UI e crie uma análise informando nome, empresa-alvo e site.
+2. Adicione ao menos um concorrente com site na lateral da aba **Monitoramento**.
+3. Na aba **Perfil da empresa**, preencha opcionalmente mercado, produtos, público-alvo e termo de busca. Um termo vazio usa o nome da empresa.
+4. Informe as datas inicial/final na coleta e execute-a. Nenhum período padrão é imposto.
+5. Consulte e filtre a timeline por empresa, fonte e intervalo.
 
-A API inicia mesmo quando o banco está indisponível. A conexão e as consultas têm
-limites de 3 segundos; estes limites são individuais, não um prazo total da requisição.
-As sessões são fechadas ao terminar a requisição e o pool é liberado ao encerrar a API.
-Os logs de readiness não incluem credenciais nem detalhes da exceção do banco.
+Quando `GNEWS_API_KEY` estiver configurada em `backend/.env`, `GNewsProvider` consulta notícias reais. A chave é enviada no cabeçalho `X-Api-Key`, não na URL; a busca usa o `search_term` da empresa (ou seu nome como fallback) e o intervalo informado na coleta. O provider normaliza título, descrição, URL e data de publicação e persiste `is_mock=false`. O GNews fornece até 10 resultados por consulta nesta implementação. As requisições são espaçadas para respeitar o limite de uma requisição por segundo documentado para o plano gratuito. Veja a [autenticação](https://docs.gnews.io/authentication), o [endpoint de busca](https://docs.gnews.io/endpoints/search-endpoint) e os [limites e erros](https://docs.gnews.io/error-handling).
 
-## Migrações
+Sem `GNEWS_API_KEY`, `MockNewsProvider` (fonte `GNEWS`) continua ativo. `MockXProvider` (fonte `X`) permanece ativo em qualquer configuração. Os mocks funcionam sem credenciais, produzem conteúdo previsível dentro do intervalo informado e persistem `is_mock=true`; a interface os identifica como **Demonstração · mock**. Se a chamada real ao GNews falhar, a coleta informa falha para essa fonte em vez de substituir silenciosamente o resultado por um mock; o provider X mockado continua sendo tentado. Repetir a coleta não duplica eventos com a mesma empresa, fonte e URL.
 
-O Alembic está configurado com o metadata da base SQLAlchemy. Ainda não há revisões
-ou tabelas de negócio; `upgrade head` valida a conexão e prepara o controle do Alembic.
-Quando os modelos forem implementados, importá-los no ambiente de migração antes
-de gerar e revisar uma revisão:
+A coleta tenta cada provider para cada empresa e persiste cada resultado bem-sucedido independentemente das demais tentativas. A resposta REST informa `success`, `partial` ou `failure` e o estado por fonte/empresa.
 
-```powershell
-uv run alembic revision --autogenerate -m "describe schema change"
-uv run alembic upgrade head
+Exemplo de uso REST com período explícito:
+
+```json
+POST /analyses/{id}/collect
+{
+  "from_date": "2026-09-25",
+  "to_date": "2026-10-01"
+}
 ```
 
-Migrações são explícitas; a aplicação não cria tabelas ao iniciar.
+## API REST
 
-## Verificação
+Os contratos OpenAPI ficam em `/openapi.json` e Swagger em `/docs`.
+
+| Método | Rota |
+| --- | --- |
+| `POST` | `/analyses` |
+| `GET` | `/analyses` |
+| `GET` | `/analyses/{id}` |
+| `POST` | `/analyses/{id}/companies` |
+| `DELETE` | `/analyses/{id}/companies/{companyId}` |
+| `PUT` | `/companies/{id}` |
+| `POST` | `/analyses/{id}/collect` |
+| `GET` | `/analyses/{id}/events?company=&source=&from=&to=` |
+| `GET` | `/companies/{id}/events` |
+| `POST` | `/events/{event_id}/analysis?force=false` |
+| `GET` | `/events/{event_id}/analysis` |
+
+Exemplo mínimo de criação:
+
+```json
+{
+  "name": "Concorrência financeira",
+  "target": { "name": "Empresa Alfa", "website": "https://alfa.example" }
+}
+```
+
+A análise é criada com exatamente um TARGET e pode começar sem concorrentes. O endpoint de adicionar empresa cadastra somente COMPETITOR. A edição de Company é compartilhada entre análises. Veja os schemas completos em `/docs`.
+
+## Extensão opcional pós-MVP: análise de eventos por IA
+
+A análise por IA é uma extensão opcional posterior ao MVP base e não altera o critério de aceite original. Na timeline, selecione **Analisar com IA** em um evento já coletado. A operação é individual e síncrona; não ocorre durante coleta ou carregamento da timeline. Um resultado existente é reutilizado, e **Reanalisar** solicita explicitamente uma nova chamada.
+
+Configure `ANALYSIS_PROVIDER=gemini` e `GEMINI_API_KEY` no `.env` para chamar Gemini; `GEMINI_MODEL` permite escolher o modelo e assume `gemini-3.8-flash`. Chave ausente, erro de rede, quota ou resposta inválida produzem erro controlado, sem fallback para resultado simulado. Para execução local sem credencial, selecione `ANALYSIS_PROVIDER=mock`; a UI e API identificam o resultado como simulado. Não coloque a chave em documentação, logs ou respostas.
+
+O provider Gemini e sua validação por schema estão implementados. A chamada real não foi validada nesta execução porque `ANALYSIS_PROVIDER=gemini` não estava selecionado no ambiente local.
+
+`EventAnalysis` armazena o resumo, categoria, intensidade de impacto, sentimento, relevância e justificativa separadamente do `Event` original. A coleta e a timeline permanecem disponíveis independentemente do provider de análise.
+
+## Verificações
+
+Na pasta `backend/`:
 
 ```powershell
 uv run --locked pytest -q
 uv run --locked ruff check .
 uv run --locked ruff format --check .
+uv run --locked alembic upgrade head
+uv run --locked alembic check
+npm run build
 ```
 
-Os testes automatizados usam sessões simuladas e não dependem do Docker. Para validar
-a integração real, execute `alembic upgrade head` e consulte `/health/ready` com o banco
-ativo. Depois execute `docker compose stop db`: a mesma rota deve retornar 503, enquanto
-`/health` continua retornando 200. Restaure com `docker compose up -d --wait`.
+Os testes padrão usam SQLite temporário e providers mockados; não os trate como prova de integração PostgreSQL. Para testar um banco PostgreSQL isolado, configure `DATABASE_URL` e `TEST_POSTGRES_URL` com uma base de teste dedicada, aplique as migrações e execute:
 
-Encerre a API com `Ctrl+C` e o banco com `docker compose stop db`; os dados permanecem
-no volume. Autenticação, deploy, CI e integrações GNews/X pertencem às próximas etapas.
+```powershell
+uv run --locked alembic upgrade head
+uv run --locked pytest -q tests/test_postgres_integration.py
+```
 
-## Organização
+O teste real percorre a Web UI, a coleta mockada, os assets servidos e a timeline, e remove os registros temporários criados. Não execute contra um banco com dados de usuário.
 
-- `app/api/`: rotas HTTP e contratos de resposta.
-- `app/core/`: configuração compartilhada.
-- `app/db/`: base ORM, engine e sessões.
-- `migrations/`: ambiente Alembic e futuras revisões.
-- `tests/`: configuração e comportamento dos health checks.
+## Encerrar
 
-Serviços, modelos de negócio e providers serão adicionados com suas funcionalidades.
+No modo host, encerre o Uvicorn com `Ctrl+C` e pare o banco com `docker compose --env-file .env stop db`. No modo containerizado, use `docker compose --env-file .env down`; o volume PostgreSQL persiste. Não rode os dois modos ao mesmo tempo.
