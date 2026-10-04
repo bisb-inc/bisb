@@ -10,6 +10,46 @@ Hipótese: “Dada uma empresa-alvo e uma lista de concorrentes definida pelo an
 
 Perfil funcional único: Analista. Não há autenticação, autorização ou entidade de usuário.
 
+## Decisões arquiteturais (ADRs)
+
+Todas as decisões abaixo estão **aceitas e implementadas**. Revertê-las exige nova decisão do grupo.
+
+### ADR-001 — Monólito modular FastAPI com serviços compartilhados
+
+- **Contexto:** o MVP é pequeno, mantido por um grupo de quatro pessoas e precisa rodar localmente.
+- **Decisão:** uma única aplicação FastAPI. Web Routes e REST API Routes chamam diretamente a mesma camada `app/services/`.
+- **Consequências:** um deploy e um banco; a regra de negócio não é duplicada entre Web e API. A Web UI nunca chama a própria REST API por HTTP.
+
+### ADR-002 — Web UI server-rendered com Jinja2, HTMX e Tailwind
+
+- **Contexto:** a interface precisa ser simples, acessível e executável sem build de frontend em runtime nem CDN.
+- **Decisão:** templates Jinja2 renderizados pelo FastAPI, HTMX local para atualizações parciais e Tailwind compilado para CSS estático.
+- **Consequências:** não há SPA nem frontend independente. Node/npm são usados apenas para compilar assets. Fragmentos HTMX reutilizam partials Jinja2.
+
+### ADR-003 — Fontes isoladas em `SourceProvider`, com mocks compatíveis
+
+- **Contexto:** credenciais, custo e disponibilidade das APIs externas não podem impedir a demonstração.
+- **Decisão:** cada fonte implementa `fetch(company, start, end)` e retorna `NormalizedEvent`. O GNews real é ativado por `GNEWS_API_KEY`; sem a chave, usa-se o mock de notícias. O X é mockado. Eventos simulados recebem `is_mock=true`.
+- **Consequências:** o fluxo completo roda sem credenciais e novas fontes não alteram os serviços. Falha de uma fonte real é reportada, sem troca silenciosa para mock.
+
+### ADR-004 — Papel da empresa no vínculo `AnalysisCompany`
+
+- **Contexto:** a mesma empresa pode ser alvo em uma análise e concorrente em outra.
+- **Decisão:** `TARGET`/`COMPETITOR` ficam em `AnalysisCompany.role`. `Company` é compartilhada entre análises e identificada pelo site normalizado. Um índice parcial garante um único `TARGET` por análise.
+- **Consequências:** editar uma `Company` afeta todas as análises em que ela participa. Eventos pertencem à empresa, não à análise.
+
+### ADR-005 — Período informado a cada coleta, não persistido
+
+- **Contexto:** o grupo não definiu um período padrão de domínio, e cada coleta pode precisar de um recorte diferente.
+- **Decisão:** a coleta recebe `from_date`/`to_date`. Os presets da Web UI (1 semana, 1 mês, 3 meses, Personalizado) são convertidos em datas nas Web Routes.
+- **Consequências:** `Analysis` não guarda período e não há coleta agendada. Os presets são regra de UX, não de negócio.
+
+### ADR-006 — Enriquecimento por IA separado da coleta (extensão pós-MVP)
+
+- **Contexto:** a análise por IA ficou fora do MVP base, mas agrega valor à leitura dos eventos.
+- **Decisão:** `AnalysisProvider` (Gemini ou mock, escolhido por `ANALYSIS_PROVIDER`), independente de `SourceProvider`. O resultado validado vai para `EventAnalysis`, 1:1 com `Event`, sob demanda e um evento por vez.
+- **Consequências:** coleta e timeline funcionam sem IA, e o `Event` original nunca é alterado. Não há fallback automático de Gemini para mock nem processamento em background.
+
 ## Componentes implementados
 
 Monólito modular FastAPI. Web UI e REST API são duas interfaces para os mesmos serviços; não há frontend independente.
@@ -67,4 +107,4 @@ X real, autenticação/autorização, agendamento, workers, filas, alertas, craw
 
 ## Limitações conhecidas
 
-As limitações da implementação atual estão registradas em [backend/README.md](../backend/README.md#limitações-conhecidas): o contador inicial da Visão geral, a resposta HTMX da coleta e o teste PostgreSQL opt-in desatualizado. Não são decisões arquiteturais pendentes.
+As limitações da implementação atual estão registradas em [backend/README.md](../backend/README.md#limitações-conhecidas): as contagens da resposta HTMX da coleta e o teste PostgreSQL opt-in desatualizado. Não são decisões arquiteturais pendentes.

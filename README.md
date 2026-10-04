@@ -191,7 +191,31 @@ O processo de documentação seguiu uma ordem:
 3. Os arquivos `.ai/` servem de contexto operacional atualizado para agentes.
 4. Os arquivos em `prompts/` preservam, como evidência histórica, os prompts usados em cada etapa. Por isso, não descrevem as extensões posteriores.
 
-Ferramentas utilizadas: ChatGPT apoiou discovery e escopo; Codex apoiou consolidação e desenvolvimento no repositório; Mermaid foi usado nos diagramas.
+## Uso de agentes de IA
+
+| Ferramenta | Uso |
+| --- | --- |
+| ChatGPT | Discovery, alternativas de produto, redução de escopo e estruturação inicial da arquitetura |
+| Codex | Agente no repositório: consolidação da arquitetura, geração do contexto `.ai/` e implementação do MVP e das extensões |
+| Claude Code | Agente no repositório: auditoria final da documentação frente ao código e ajustes de entrega |
+| Mermaid | Diagramas de componentes, entidades e fluxos |
+
+O fluxo de trabalho seguiu a proposta da disciplina:
+
+1. Arquitetura definida com apoio de chat.
+2. Prompt de geração de contexto, que produz os quatro arquivos `.ai/`.
+3. Prompt de implementação, executado por agente com acesso ao repositório.
+
+Os arquivos `.ai/` funcionam como memória do projeto para qualquer agente: escopo, regras de negócio, stack permitida, decisões arquiteturais (ADRs) e limites do que **não** deve ser implementado.
+
+### Dificuldades encontradas e como foram tratadas
+
+- **Qualidade dos resultados externos.** A primeira integração com o GNews funcionava, mas nomes compostos como “Mercado Pago” traziam notícias irrelevantes sobre “mercado”. A busca passou a usar frase exata, apenas em título e descrição, com testes dedicados. A integração “funcionando” precisou de validação humana com dados reais.
+- **Documentação defasada em relação ao código.** Com a evolução da interface e das integrações, parte da documentação continuou descrevendo telas antigas e pendências já resolvidas. Uma auditoria comparou cada afirmação com o código e separou o MVP base das extensões posteriores.
+- **Continuidade entre agentes.** O trabalho foi retomado em outro agente (Claude Code) sem perda de contexto, porque decisões, regras e prompts estavam versionados em `.ai/` e `prompts/`.
+- **Controle de escopo.** Agentes tendem a ampliar funcionalidades. Os limites explícitos no contexto (sem autenticação, workers, SPA ou análise automática) e a classificação de extensões como pós-MVP mantiveram o recorte.
+- **Segredos e integrações reais.** As chaves ficam apenas no `.env` local, são tratadas como `SecretStr` e não aparecem em URL nem em logs. O sistema não troca silenciosamente uma integração real com falha por um mock.
+- **Validação do que o agente entrega.** Testes automatizados com clientes externos mockados foram mantidos a cada etapa. Um bug de escopo de variável no template da Visão geral, que fazia o contador mostrar só os destaques, foi encontrado na revisão e corrigido com um teste de regressão.
 
 ## Verificações
 

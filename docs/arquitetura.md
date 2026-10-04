@@ -265,6 +265,7 @@ O processo utilizou:
 
 - **ChatGPT** para discovery, redução de escopo e estruturação inicial do MVP.
 - **Codex**, como agente de desenvolvimento no repositório, para revisão, consolidação técnica e implementação.
+- **Claude Code**, como agente no repositório, na auditoria final da documentação frente ao código e nos ajustes de entrega.
 - **Mermaid** para os diagramas.
 
 O registro dos prompts da arquitetura está em [prompts/prompt_architecture.md](../prompts/prompt_architecture.md). Os prompts da Aula 2 estão em [prompts/context-generation.md](../prompts/context-generation.md), que gera o contexto operacional `.ai/`, e em [prompts/implementation.md](../prompts/implementation.md), que orienta a implementação. Esses arquivos são registros históricos das interações e não descrevem as extensões posteriores.
