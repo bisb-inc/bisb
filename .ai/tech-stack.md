@@ -30,6 +30,31 @@ Frontend: Web UI server-rendered pelo próprio FastAPI, com Jinja2, HTML5, Tailw
 
 Mock Providers fazem parte da estratégia técnica do MVP e atendem à mesma abstração dos providers reais (`SourceProvider` ou `AnalysisProvider`); não são uma tecnologia externa separada. Garantem execução local e demonstração sem credenciais externas.
 
+## Bibliotecas permitidas
+
+Use somente as dependências já declaradas em [pyproject.toml](../backend/pyproject.toml) e [package.json](../backend/package.json), com as faixas ali definidas e versões travadas nos lockfiles.
+
+| Finalidade | Permitido | Observação |
+| --- | --- | --- |
+| Web/API | `fastapi`, `uvicorn`, `python-multipart` | Formulários da Web UI dependem de `python-multipart` |
+| Templates | `jinja2` | Via `fastapi.templating` |
+| Configuração | `pydantic-settings` (Pydantic) | Segredos como `SecretStr` |
+| Persistência | `sqlalchemy` 2.0 síncrono, `psycopg[binary]`, `alembic` | Sem ORM assíncrono |
+| HTTP externo | `httpx` | Usado pelo `GNewsProvider` e pelo `TestClient` |
+| IA (extensão pós-MVP) | `google-genai` | Apenas em `app/providers/analysis.py` |
+| Testes e qualidade | `pytest`, `ruff` | Grupo `dev` |
+| Assets | `tailwindcss`, `@tailwindcss/cli`, `htmx.org` | Somente em tempo de build; HTMX é copiado para `app/static/` |
+
+## Não permitido sem nova decisão do grupo
+
+- Frameworks de frontend ou SPA (React, Vue, Next.js, Alpine) e bibliotecas de componentes visuais.
+- CDN em runtime para CSS ou JavaScript.
+- SQLAlchemy assíncrono, outro ORM ou outro banco além de PostgreSQL (SQLite apenas nos testes).
+- Filas, workers, schedulers ou brokers (Celery, RQ, APScheduler, Redis etc.).
+- Outros SDKs de LLM ou de fontes externas fora da abstração de providers.
+- Bibliotecas de autenticação; o MVP não tem autenticação.
+- Atualizar dependências ou lockfiles (`uv.lock`, `package-lock.json`) sem necessidade explícita da tarefa.
+
 ## Arquitetura da interface
 
 - Web Routes retornam páginas completas ou fragmentos HTML renderizados com Jinja2.

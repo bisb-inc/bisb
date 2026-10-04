@@ -9,7 +9,7 @@
   <section aria-labelledby="highlights-heading">
     <div class="flex items-end justify-between gap-4 border-b border-line pb-3"><div><p class="eyebrow">Leitura rápida</p><h2 id="highlights-heading" class="mt-1 text-xl font-semibold">Acontecimentos em destaque</h2></div><a href="/ui/analyses/{{ analysis.id }}?view=timeline" class="text-sm font-semibold text-accent hover:underline">Abrir timeline →</a></div>
     {% if highlights %}
-      {% set events = highlights %}{% include "partials/timeline.html" %}
+      {% with events = highlights %}{% include "partials/timeline.html" %}{% endwith %}
     {% else %}
       <div id="event-list"><div class="border-b border-line py-10"><h3 class="font-semibold">Ainda não há acontecimentos</h3><p class="mt-2 max-w-lg text-sm leading-6 text-muted">Execute uma coleta para reunir notícias e publicações das empresas monitoradas.</p></div></div>
     {% endif %}

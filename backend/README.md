@@ -68,7 +68,7 @@ Para executar sem credenciais externas, deixe `GNEWS_API_KEY` vazio e selecione 
 
 O wizard inicia em **1 semana** como preset de UX. Cada coleta recebe datas concretas; nenhum período é persistido em `Analysis`. Semana inclui hoje e os seis dias anteriores; mês e trimestre usam subtração de meses de calendário. Datas inicial/final são inclusivas para o usuário, convertidas internamente ao intervalo UTC com fim exclusivo no dia seguinte. O cabeçalho informa evento mais recentemente recebido, não “última coleta”; não há registro de tentativas de coleta.
 
-A Visão geral deriva a distribuição de eventos por empresa e destaca até cinco eventos com análise Gemini, ordenados por relevância e publicação; sem eles, usa os cinco mais recentes. Não cria scores nem chama Gemini automaticamente. Consulte a limitação do contador em [Limitações conhecidas](#limitações-conhecidas).
+A Visão geral deriva a distribuição de eventos por empresa e destaca até cinco eventos com análise Gemini, ordenados por relevância e publicação; sem eles, usa os cinco mais recentes. Não cria scores nem chama Gemini automaticamente. O contador “Acontecimentos” mostra o total de eventos do recorte consultado.
 
 Quando `GNEWS_API_KEY` estiver configurada em `backend/.env`, `GNewsProvider` consulta notícias reais. A chave é enviada no cabeçalho `X-Api-Key`, não na URL. O `search_term` da empresa (ou nome como fallback) é escapado e envolvido em aspas como frase exata: `q="Mercado Pago"`. HTTPX codifica os parâmetros; a consulta envia `in=title,description`, `sortby=publishedAt`, `from` e `to`, preservando o intervalo solicitado. Isso reduz matches amplos em nomes compostos sem aplicar classificação por IA ou filtros adicionais de relevância.
 
@@ -155,8 +155,7 @@ O teste opt-in percorre persistência, Web UI, coleta e assets, mas ainda envia 
 
 ## Limitações conhecidas
 
-- **Contador da Visão geral:** em [workspace/overview.html](app/web/templates/workspace/overview.html), a variável `events` é substituída por `highlights` antes da renderização do contador “Acontecimentos”. Na carga da página, o número reflete apenas os destaques (até cinco), enquanto a distribuição por empresa usa o conjunto consultado. A resposta HTMX de coleta atualiza o contador com o total de eventos da análise.
-- **Contagens após a coleta HTMX:** a resposta da coleta calcula destaques e contagens a partir de todos os eventos da análise, enquanto a URL enviada em `HX-Push-Url` contém o intervalo coletado. Ao recarregar essa URL, o filtro de período é aplicado e as contagens podem mudar. Ver [Web Routes](app/web/routes.py).
+- **Contagens após a coleta HTMX:** a resposta da coleta calcula o contador, os destaques e a distribuição por empresa a partir de todos os eventos da análise, enquanto a URL enviada em `HX-Push-Url` contém o intervalo coletado. Ao recarregar essa URL, o filtro de período é aplicado e as contagens podem mudar. Ver [Web Routes](app/web/routes.py).
 - **Teste PostgreSQL opt-in:** o [teste](tests/test_postgres_integration.py) envia `name`, `target_name` e `target_website` diretamente para `/ui/analyses`, mas a rota atual espera `wizard_state`. O teste também contém expectativas da interface anterior.
 
 Esses pontos são limitações concretas da implementação e da validação atuais, não funcionalidades futuras nem decisões arquiteturais pendentes. X real, paginação e coordenação de coletas concorrentes permanecem fora da implementação.
