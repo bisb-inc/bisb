@@ -2,27 +2,40 @@
 
 O backend é um monólito modular FastAPI que serve a REST API e a Web UI Jinja2/HTMX. A interface HTML é servida em `/ui/analyses`; `/` redireciona para a lista. Os endpoints REST estão em `/docs` e seguem [docs/arquitetura.md](../docs/arquitetura.md). Ambas as interfaces chamam os mesmos serviços Python, sem HTTP interno para a própria API.
 
-## Requisitos locais
+## Requisitos e modos de execução
 
-- Python 3.14 e uv;
-- Docker Desktop com containers Linux para PostgreSQL 16;
-- Node.js/npm somente para compilar Tailwind e copiar o asset HTMX. Node não é runtime da aplicação.
+O projeto oferece dois modos locais: aplicação e PostgreSQL em containers Docker, ou aplicação no host com somente o PostgreSQL em Docker Compose. Docker Desktop com containers Linux é necessário para ambos. O modo no host também requer Python 3.14, uv e Node.js/npm para compilar assets; Node não é runtime da aplicação.
 
-Na primeira configuração, a partir de `backend/`, copie o exemplo sem sobrescrever um `.env` existente. Depois instale dependências, compile os assets, inicie o banco, aplique migrações e rode a aplicação:
+Na primeira configuração, a partir de `backend/`, copie o exemplo sem sobrescrever um `.env` existente:
 
 ```powershell
 if (-not (Test-Path .env)) { Copy-Item .env.example .env }
+```
+
+### Aplicação e PostgreSQL em Docker Compose
+
+```powershell
+docker compose --env-file .env up -d --build
+```
+
+O Compose constrói a imagem da aplicação, compila Tailwind e disponibiliza HTMX como asset local, aguarda o PostgreSQL ficar saudável, executa as migrações Alembic e inicia o FastAPI. A Web UI fica em `http://127.0.0.1:7778/`, a REST API em `/docs` e o PostgreSQL em `127.0.0.1:5433`. O endereço publicado da aplicação é apenas local. Acompanhe os serviços com `docker compose --env-file .env ps` e `docker compose --env-file .env logs -f app`.
+
+O serviço `migrate` executa antes da aplicação. O container do backend conecta-se ao banco pelo endereço interno `db:5432`; a configuração `DATABASE_URL` no `.env` continua apontando para `127.0.0.1:5433` no modo host. O volume `postgres_data` preserva os dados ao remover os containers com `docker compose down`.
+
+### Aplicação no host e PostgreSQL em Docker
+
+```powershell
 uv sync --locked
 npm ci
 npm run build
-docker compose --env-file .env up -d --wait
+docker compose --env-file .env up -d --wait db
 uv run --locked alembic upgrade head
-uv run --locked uvicorn app.main:app --reload
+uv run --locked uvicorn app.main:app --reload --port 7778
 ```
 
-A Web UI fica em `http://127.0.0.1:8000/`; a REST API em `/docs`; PostgreSQL atende em `127.0.0.1:5433`. O Compose inicia apenas o banco. A aplicação roda no ambiente local de Python.
+A Web UI fica em `http://127.0.0.1:7778/`, a REST API em `/docs` e o PostgreSQL em `127.0.0.1:5433`. `npm run build` compila `app/static/css/input.css` e copia HTMX e sua licença para `app/static/js/`; os arquivos são servidos por `/static/` sem depender de CDN.
 
-`npm run build` compila `app/static/css/input.css` para CSS estático e copia HTMX e sua licença para `app/static/js/`. A aplicação serve esses arquivos por `/static/`; a demonstração não usa CDN.
+Não execute os dois modos simultaneamente: ambos usam o mesmo volume e publicam a porta 7778.
 
 ## Configuração
 
@@ -109,4 +122,4 @@ O teste real percorre a Web UI, a coleta mockada, os assets servidos e a timelin
 
 ## Encerrar
 
-Encerre o Uvicorn com `Ctrl+C`. Pare o banco local com `docker compose stop db` quando não precisar dele; o volume PostgreSQL é persistente.
+No modo host, encerre o Uvicorn com `Ctrl+C` e pare o banco com `docker compose --env-file .env stop db`. No modo containerizado, use `docker compose --env-file .env down`; o volume PostgreSQL persiste. Não rode os dois modos ao mesmo tempo.

@@ -13,7 +13,7 @@ Referência técnica do projeto. Prioridade: [arquitetura oficial](../docs/arqui
 | Dependências | uv, pyproject.toml e uv.lock | Implementado/configurado |
 | Testes da base | pytest e HTTPX/TestClient | Implementado/configurado |
 | Lint/formatação | Ruff | Implementado/configurado |
-| Ambiente local | Banco via Docker Compose; API local com Uvicorn | Implementado/configurado |
+| Ambiente local | Aplicação FastAPI e PostgreSQL via Docker Compose; execução alternativa da API no host com Uvicorn | Implementado/configurado |
 | Comunicação — base | API REST com health checks | Implementado/configurado |
 | Documentação | Markdown e Mermaid | Implementado/configurado |
 | Persistência de negócio | Modelos e migrações das entidades do MVP | Implementado/configurado |
@@ -73,17 +73,17 @@ Versões abaixo registradas em [uv.lock](../backend/uv.lock), não inferidas da 
 
 Versões dos assets confirmadas no [package-lock.json](../backend/package-lock.json): Tailwind CSS `4.3.0`, `@tailwindcss/cli` `4.3.0` e HTMX `2.0.11`. Versões de Jinja2 `3.1.6` e `python-multipart` `0.0.32` estão no `uv.lock`.
 
-Não há versão exata de uv ou Docker Compose fixada nos manifests. Não inventar versões. Não alterar dependências sem necessidade técnica e manter o lockfile consistente.
+A imagem da aplicação instala uv `0.10.4`, fixado no Dockerfile. Não há versão exata de Docker Compose fixada no repositório. Não inventar outras versões. Não alterar dependências sem necessidade técnica e manter o lockfile consistente.
 
 Jinja2, Tailwind CSS e HTMX estão configurados como dependências/assets da Web UI. HTML5 e JavaScript vanilla compõem a interface; JavaScript adicional não é requisito do MVP. Node/npm são ferramentas de build, não runtime da aplicação.
 
 ## Configuração existente a preservar
 
-- Banco em `127.0.0.1:5433`, volume persistente e health check do PostgreSQL.
+- Compose executa a aplicação e o PostgreSQL; o banco usa volume persistente e health check. Para execução no host, PostgreSQL é publicado em `127.0.0.1:5433`; entre containers, o backend usa `db:5432`.
 - `APP_NAME`, `ENVIRONMENT`, `LOG_LEVEL` e `DATABASE_URL` no Settings; variáveis do processo precedem `backend/.env`.
 - Driver `postgresql+psycopg://`; credenciais reais fora do código/versionamento.
 - Sessões síncronas com encerramento por requisição; migrações explícitas.
-- API local documentada na porta 8000, com Swagger e OpenAPI.
+- A aplicação publica a Web UI e a API em `127.0.0.1:7778` no host; dentro do container o Uvicorn atende na porta 8000. Swagger e OpenAPI permanecem disponíveis.
 
 Instruções de execução: [backend/README.md](../backend/README.md).
 

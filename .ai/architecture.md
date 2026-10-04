@@ -74,7 +74,7 @@ A API planejada cobre criação/listagem/consulta de análises, adição/remoç�
 - Application / Services compartilhados por Web Routes e REST API Routes, sem HTTP interno à própria API.
 - Web UI Jinja2 com abas Monitoramento e Perfil da empresa, HTMX local e Tailwind compilado localmente.
 - Providers mockados para notícias e X, coleta com falha parcial, persistência de eventos e timeline com filtros.
-- PostgreSQL via Compose, testes funcionais com SQLite isolado e teste opt-in de fluxo Web UI com PostgreSQL real.
+- Aplicação FastAPI e PostgreSQL via Compose, testes funcionais com SQLite isolado e teste opt-in de fluxo Web UI com PostgreSQL real.
 
 O diretório `frontend/` contém documentação da interface; o código Web UI está em `backend/app/web/` e os assets servidos em `backend/app/static/`.
 

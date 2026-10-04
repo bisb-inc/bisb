@@ -28,7 +28,7 @@ Consulte a [arquitetura oficial da Aula 1](docs/arquitetura.md) para modelo de d
 - Python 3.14, FastAPI, Uvicorn e Pydantic Settings;
 - PostgreSQL 16, SQLAlchemy síncrono, psycopg e Alembic;
 - uv, pytest, HTTPX/TestClient e Ruff;
-- Docker Compose para PostgreSQL local.
+- Docker Compose para a aplicação FastAPI e o PostgreSQL locais.
 
 As versões Python estão registradas em [backend/uv.lock](backend/uv.lock).
 
@@ -58,19 +58,14 @@ Providers reais GNews/X não estão integrados. O período é informado em cada 
 
 ## Executar localmente
 
-Requisitos: Python 3.14, uv, Docker Desktop e Node.js/npm para compilar os assets. Os comandos abaixo são PowerShell, executados em `backend/`:
+Requisito: Docker Desktop com suporte a containers Linux. Os comandos abaixo são PowerShell, executados em `backend/`:
 
 ```powershell
 if (-not (Test-Path .env)) { Copy-Item .env.example .env }
-uv sync --locked
-npm ci
-npm run build
-docker compose --env-file .env up -d --wait
-uv run --locked alembic upgrade head
-uv run --locked uvicorn app.main:app --reload
+docker compose --env-file .env up -d --build
 ```
 
-A Web UI abre em <http://127.0.0.1:8000/> e a REST API em <http://127.0.0.1:8000/docs>. O banco usa `127.0.0.1:5433`. A configuração completa, schemas e modo mock estão no [README do backend](backend/README.md).
+O Compose compila os assets, inicia PostgreSQL, aplica as migrações e sobe a aplicação. A Web UI fica em <http://127.0.0.1:7778/> e a REST API em <http://127.0.0.1:7778/docs>. PostgreSQL também fica acessível no host em `127.0.0.1:5433`. Para rodar a aplicação no host com apenas o banco em Docker, veja os comandos alternativos no [README do backend](backend/README.md).
 
 ## Critério de aceite
 

@@ -140,7 +140,7 @@ Tipos físicos e índices serão definidos na implementação do banco.
 | Interações | HTMX desde o início; JavaScript vanilla apenas quando necessário |
 | Integrações | GNews ou provider equivalente; X Provider ou Mock Provider |
 | Configuração | Variáveis de ambiente e Pydantic Settings |
-| Ambiente local | Banco via Docker Compose |
+| Ambiente local | Aplicação FastAPI e PostgreSQL via Docker Compose |
 | Diagramas e documentação | Markdown e Mermaid |
 
 ## 7. Fluxos principais
