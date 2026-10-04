@@ -441,6 +441,34 @@ def test_timeline_orders_by_published_then_collected_and_filters(functional_clie
     assert outside.status_code == 422
 
 
+def test_overview_counter_shows_all_events_not_only_highlights(functional_client, functional_db):
+    analysis = functional_client.post("/analyses", json=_analysis_payload()).json()
+    company_id = analysis["companies"][0]["company"]["id"]
+    published = datetime.now(UTC) - timedelta(days=1)
+    with functional_db() as session:
+        session.add_all(
+            [
+                Event(
+                    company_id=company_id,
+                    source=EventSource.GNEWS,
+                    title=f"Acontecimento {index}",
+                    url=f"https://example.test/overview/{index}",
+                    published_at=published - timedelta(minutes=index),
+                    is_mock=True,
+                )
+                for index in range(8)
+            ]
+        )
+        session.commit()
+
+    page = functional_client.get(f"/ui/analyses/{analysis['id']}?view=overview")
+
+    assert page.status_code == 200
+    total = re.search(r'<dd id="event-total"[^>]*>(\d+)</dd>', page.text).group(1)
+    assert total == "8"
+    assert page.text.count('id="event-title-') == 5
+
+
 def test_collection_reports_total_failure(functional_client, functional_db):
     class BrokenNews:
         source = EventSource.GNEWS
