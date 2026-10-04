@@ -6,7 +6,7 @@ Padrões de desenvolvimento para o monólito modular FastAPI e sua Web UI integr
 
 A ordem de referência é: [arquitetura oficial](../docs/arquitetura.md), [visão estratégica](../competitive_monitor_mvp.md) e estado real do repositório. A arquitetura define o estado-alvo; o código comprova o estado atual. Os requisitos consolidados pelo [Prompt 1](../prompts/context-generation.md) complementam esse contexto.
 
-Diferencie sempre **já implementado**, **planejado para o MVP** e **roadmap futuro**. Documentação e testes existentes não provam execução bem-sucedida. Registre divergências e pendências em vez de inventar regras.
+Diferencie sempre **MVP base**, **extensões já implementadas** e **roadmap futuro**. Documentação e testes existentes não provam execução bem-sucedida. Registre divergências e pendências em vez de inventar regras.
 
 ## Convenções adotadas na base
 
@@ -19,13 +19,13 @@ Diferencie sempre **já implementado**, **planejado para o MVP** e **roadmap fut
 - Preservar `uv.lock`; não atualizar dependências sem necessidade da tarefa. As versões verificadas estão em [tech-stack.md](tech-stack.md).
 - Ruff: Python 3.14, linhas de até 100 caracteres e regras `E, F, I, UP, B`, conforme [pyproject.toml](../backend/pyproject.toml).
 
-## Diretrizes para a implementação planejada
+## Diretrizes de implementação
 
 - Rotas cuidam da interface HTTP; regras de negócio coordenam operações; persistência mantém os dados; providers isolam fontes externas.
 - Adicionar serviços, modelos e providers quando houver comportamento concreto, sem camadas vazias ou substituição desnecessária da base existente.
 - Providers reais e mockados devem atender à mesma abstração e retornar dados normalizados para o domínio. Não propagar contratos externos pelas regras de negócio.
 - Identificar eventos simulados por `is_mock`, inclusive na apresentação. Garantir demonstração local com mocks compatíveis quando integrações reais forem inviáveis.
-- Preservar resultados de fontes bem-sucedidas quando outra falhar; informar a falha parcial. Os detalhes transacionais e o contrato dessa resposta ainda precisam ser definidos.
+- Preservar resultados de fontes bem-sucedidas quando outra falhar; informar a falha parcial. A coleta confirma cada par empresa/provider separadamente e responde com `CollectionResult` (ver [business-rules.md](business-rules.md)).
 - Seguir os endpoints oficiais e as [regras de negócio](business-rules.md). Não adicionar autenticação, workers ou funcionalidades do roadmap.
 - Seguir a Web UI server-rendered integrada ao FastAPI, com Jinja2, HTML5, Tailwind CSS e HTMX, conforme a arquitetura oficial e as convenções abaixo.
 
@@ -33,22 +33,24 @@ Diferencie sempre **já implementado**, **planejado para o MVP** e **roadmap fut
 
 Templates Jinja2 e arquivos estáticos pertencem à própria aplicação FastAPI. Não existe frontend independente. Web Routes ficam separadas das REST API Routes; ambas reutilizam `Application / Services`.
 
-Organização conceitual a adaptar à estrutura real durante a implementação:
+Estrutura atual em `backend/`:
 
 ```text
 app/
-├── api/
-│   └── routes/
+├── api/routes/          # REST API (analyses, event_analyses, health)
 ├── web/
-│   ├── routes/
-│   └── templates/
+│   ├── routes.py        # Web Routes: lista, wizard, workspace, Setup, coleta, análise de evento
+│   └── templates/       # base, analyses, wizard, analysis (Timeline)
+│       ├── workspace/   # overview, companies, setup
+│       └── partials/    # fragmentos HTMX reutilizados
 ├── services/
 ├── providers/
+├── core/
 ├── db/
-└── static/
+└── static/              # css/app.css compilado, js/htmx.min.js, js/app.js
 ```
 
-Essa organização não exige criar diretórios vazios nem substituir os módulos existentes. Introduzir módulos somente quando houver responsabilidades concretas.
+Estender essa estrutura em vez de substituí-la. Introduzir módulos somente quando houver responsabilidades concretas.
 
 ## Separação entre Web Routes, REST API e serviços
 
@@ -105,7 +107,7 @@ Usar HTMX para interações localizadas, como executar coleta, atualizar timelin
 - Tratar `GEMINI_API_KEY` como segredo: nunca registrar, retornar, persistir ou incluir em imagem. Não incluir chaves em prompts enviados ao modelo.
 - Cobrir providers Gemini por cliente mockado; a suíte padrão não deve fazer chamadas externas. Validar API, Web Route HTMX, migração e preservação do evento/resultado anterior em falhas.
 
-A suíte em [backend/tests](../backend/tests) cobre configuração, health, OpenAPI, regras de negócio, providers, rotas Web/REST, fragmentos HTMX e fluxo completo com SQLite isolado. O teste PostgreSQL separado é opt-in e requer uma base dedicada.
+A suíte em [backend/tests](../backend/tests) cobre configuração, health, OpenAPI, regras de negócio, providers (incluindo GNews e Gemini com clientes mockados), rotas Web/REST, wizard, fragmentos HTMX e fluxo completo com SQLite isolado. O teste PostgreSQL separado é opt-in, requer uma base dedicada e ainda usa o formulário anterior ao wizard; precisa ser atualizado antes de servir como evidência do fluxo atual.
 
 Validar o fluxo de análise até a timeline, TARGET único, concorrentes adicionados depois, perfil opcional, fallback de busca, identificação de mocks, deduplicação, filtros, falha parcial e preservação dos eventos. Tratar estados vazios, carregamento e erro na interface conforme a arquitetura.
 
