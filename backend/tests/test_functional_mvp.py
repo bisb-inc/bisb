@@ -195,6 +195,16 @@ def test_ui_flow_create_add_collect_deduplicate_and_filter(functional_client, fu
     assert "Beta Finance" not in functional_client.get(f"/ui/analyses/{analysis_id}/setup").text
 
 
+def test_login_page_is_demonstrative_and_links_to_analyses(functional_client):
+    page = functional_client.get("/login")
+
+    assert page.status_code == 200
+    assert "Entre no Bisb" in page.text
+    assert "Acesso demonstrativo" in page.text
+    assert page.text.count('href="/ui/analyses"') >= 2
+    assert "<form" not in page.text
+
+
 def test_wizard_requires_competitor_before_period_step(functional_client):
     state = {
         "name": "Setor de teste",

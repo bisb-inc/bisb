@@ -229,6 +229,15 @@ def home():
     return RedirectResponse(url="/ui/analyses", status_code=303)
 
 
+@router.get("/login", response_class=HTMLResponse, include_in_schema=False)
+def login_page(request: Request):
+    return templates.TemplateResponse(
+        request=request,
+        name="login.html",
+        context=_context(request),
+    )
+
+
 @router.get("/ui/analyses", response_class=HTMLResponse, include_in_schema=False)
 def analyses_page(request: Request, session: Annotated[Session, Depends(get_session)]):
     return templates.TemplateResponse(
