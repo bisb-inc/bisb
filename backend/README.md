@@ -41,7 +41,7 @@ Não execute os dois modos simultaneamente: ambos usam o mesmo volume e publicam
 
 | Variável | Uso |
 | --- | --- |
-| `APP_NAME` | Nome da aplicação; padrão `Competitive Monitor` |
+| `APP_NAME` | Nome da aplicação, usado como título da OpenAPI; padrão `Bisb — Competitive Monitor` |
 | `ENVIRONMENT` | Ambiente; padrão `development` |
 | `LOG_LEVEL` | Nível de log; padrão `INFO` |
 | `DATABASE_URL` | URL PostgreSQL `postgresql+psycopg://`; obrigatória |

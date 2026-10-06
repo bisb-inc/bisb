@@ -15,7 +15,7 @@ class Settings(BaseSettings):
         hide_input_in_errors=True,
     )
 
-    app_name: str = "Competitive Monitor"
+    app_name: str = "Bisb — Competitive Monitor"
     environment: str = "development"
     database_url: SecretStr
     gnews_api_key: SecretStr | None = None
