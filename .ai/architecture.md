@@ -4,6 +4,8 @@ Contexto operacional para agentes que trabalham no repositório. Fonte principal
 
 ## Produto e hipótese
 
+Bisb é o nome do sistema/produto. Competitive Monitor é o módulo implementado e o escopo funcional desta entrega; a forma de exibição é **Bisb — Competitive Monitor**. Não criar outros módulos do Bisb sem decisão do grupo.
+
 O Competitive Monitor acompanha uma empresa-alvo (`TARGET`) e seus concorrentes (`COMPETITOR`) em uma timeline única de notícias e publicações do X/Twitter.
 
 Hipótese: “Dada uma empresa-alvo e uma lista de concorrentes definida pelo analista, é possível coletar acontecimentos de diferentes fontes, normalizá-los, persistir os resultados e apresentá-los em uma timeline comparativa.”
@@ -75,6 +77,7 @@ Seleção de providers, feita em `create_app`:
 
 ## Web UI implementada
 
+- **Entrada demonstrativa** (`/login`): botões “Entrar com Microsoft” e “Entrar com Google” que apenas levam a `/ui/analyses`. Não autentica, não cria sessão e não integra OAuth; não tratar como autenticação implementada.
 - **Lista de análises** (`/ui/analyses`) com a ação **Nova análise**.
 - **Wizard** (`/ui/analyses/new`) em cinco etapas: Análise → Empresa principal / TARGET → Concorrentes → Período → Revisão. O estado do rascunho trafega no campo `wizard_state` e só é persistido na confirmação. **Criar e analisar** cria a análise, executa a coleta inicial e redireciona para a Visão geral. O wizard exige ao menos um concorrente.
 - **Workspace** (`/ui/analyses/{id}?view=overview|timeline|companies`):

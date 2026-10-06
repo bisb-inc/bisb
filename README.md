@@ -1,6 +1,8 @@
-# Competitive Monitor
+# Bisb — Competitive Monitor
 
-**Competitive Monitor** é um MVP de monitoramento competitivo para acompanhar uma empresa-alvo e seus concorrentes em uma timeline única de notícias e publicações do X/Twitter.
+Bisb é o nome do sistema/produto. Competitive Monitor é o módulo implementado e o escopo funcional desta entrega.
+
+O **Competitive Monitor** é um MVP de monitoramento competitivo para acompanhar uma empresa-alvo e seus concorrentes em uma timeline única de notícias e publicações do X/Twitter.
 
 ## Problema e hipótese
 
@@ -74,6 +76,7 @@ Não existe SPA nem aplicação frontend independente. Node/npm serve somente co
 - `TARGET` único por análise, `COMPETITOR` adicionado/removido manualmente e `Company` compartilhada entre análises;
 - REST API para análises, empresas, coleta, eventos e análise de eventos;
 - Web UI com lista de análises, wizard em cinco etapas e workspace com **Visão geral**, **Timeline** e **Empresas**; manutenção separada em **Setup**;
+- Tela de entrada demonstrativa em `/login`, que leva à lista de análises sem autenticar; autenticação e autorização não fazem parte do MVP;
 - Coleta por empresa e provider, com falha parcial por provider sem descartar resultados bem-sucedidos;
 - Filtros por empresa, fonte e período; ordenação por `published_at DESC` e `collected_at DESC`;
 - Identificação de `is_mock` na interface, com resultados reais e mockados claramente diferenciados.

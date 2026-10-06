@@ -1,8 +1,10 @@
 # Arquitetura do MVP — Entrega da Aula 1
 
-Este é o documento oficial de arquitetura do **Competitive Monitor**. Ele define o escopo, os usuários, os componentes, os dados, a API, as tecnologias e os fluxos do MVP, e registra como essa arquitetura está implementada. A [proposta inicial](../competitive_monitor_mvp.md) guarda a visão do produto e o roadmap.
+Este é o documento oficial de arquitetura do **Bisb — Competitive Monitor**. Bisb é o nome do sistema/produto. Competitive Monitor é o módulo implementado e o escopo funcional desta entrega.
 
-O documento distingue três camadas:
+O documento define o escopo, os usuários, os componentes, os dados, a API, as tecnologias e os fluxos do MVP, e registra como essa arquitetura está implementada. A [proposta inicial](../competitive_monitor_mvp.md) guarda a visão do produto e o roadmap.
+
+Ele distingue três camadas:
 
 - **MVP base:** escopo e critério de aceite definidos na Aula 1.
 - **Estado implementado:** como o MVP base foi construído no repositório, incluindo decisões que estavam em aberto na Aula 1.
@@ -75,6 +77,7 @@ Web UI e REST API reutilizam a mesma lógica por chamadas diretas à camada de s
 
 | Área | Rota | Conteúdo |
 | --- | --- | --- |
+| Entrada demonstrativa | `/login` | Tela de acesso com as opções Microsoft e Google, que apenas levam à lista de análises; não há autenticação nem integração com esses provedores |
 | Lista de análises | `/ui/analyses` | Análises existentes e ação **Nova análise**; `/` redireciona para cá |
 | Wizard de criação | `/ui/analyses/new` | Etapas **Análise → Empresa principal / TARGET → Concorrentes → Período → Revisão**; a confirmação **Criar e analisar** cria os registros, executa a coleta inicial e abre o workspace |
 | Workspace — Visão geral | `/ui/analyses/{id}?view=overview` | Contador de acontecimentos, número de empresas, distribuição de eventos por empresa, acontecimentos em destaque e formulário de coleta (**Atualizar monitoramento**) |
