@@ -67,3 +67,50 @@ Evidências das intervenções da frente Core/Services sobre o baseline registra
 | Complexidade ciclomática de `update_company` | 6 | 4 |
 | Complexidade ciclomática de `get_or_create_company` | 4 | 3 |
 | Regras distintas de comparação de site na aplicação | 2 | 2 (wizard mantido, ver acima) |
+
+## Diagnóstico da frente Core
+
+| Item do plano | Situação | Tratamento |
+| --- | --- | --- |
+| P1 — Services dependem de FastAPI | Confirmado (5 de 5 módulos, 15 `raise HTTPException`) | Seções 1 e 2 |
+| P2 — Coleta concentra responsabilidades | Confirmado (complexidade 11, 83 linhas) | Seção 3 |
+| P3 — Identidade de Company por site não reutilizada | Confirmado nos serviços; divergência confirmada no wizard | Seção 4 (serviços); wizard mantido como dívida |
+| Auditoria de segurança | Executada | [02-security-audit.md](02-security-audit.md) |
+
+### Alterações avaliadas e rejeitadas
+
+- **Hierarquia maior de exceções ou exceções por entidade** (`AnalysisNotFoundError`, `CompanyNotFoundError`…): os serviços só usam três status distintos; tipos adicionais não mudariam nenhum tratamento (KISS/YAGNI).
+- **Repository Pattern ou camada de acesso a dados separada:** os serviços usam a `Session` do SQLAlchemy diretamente, sem duplicação de consultas que justifique outra camada.
+- **Tipar `status` de `CollectionResult`/`ProviderOutcome` como `Literal`:** alteraria o schema OpenAPI publicado (`string` → `enum`), ou seja, o contrato REST.
+- **Reordenar a validação de período em `analysis_events`** (hoje verificada depois de montar a consulta): sem efeito observável nem ganho de legibilidade relevante.
+- **Unificar a regra de site do wizard com `normalize_website`:** muda quando e com qual mensagem o erro aparece e pertence à Web Layer (seção 4).
+- **Remover os providers mockados padrão de `collect_analysis(providers=None)`:** usados pelos testes de serviço; as rotas sempre passam `app.state.source_providers`.
+
+## Validação final da branch `refactor/felipe-core`
+
+| Comando | Resultado |
+| --- | --- |
+| `uv run --locked pytest -q` | 176 passed, 1 skipped |
+| `uv run --locked pytest -q` com `TEST_POSTGRES_URL` | 177 passed |
+| `uv run --locked ruff check .` | sem erros |
+| `uv run --locked ruff format --check .` | 45 arquivos formatados |
+| `uv run --locked alembic check` | `No new upgrade operations detected.` |
+| `npm run build` | concluído; `app.css` e `htmx.min.js` idênticos aos versionados |
+
+| Métrica | Baseline | `refactor/felipe-core` |
+| --- | ---: | ---: |
+| Módulos de `app/services/` que importam FastAPI | 5 | 0 |
+| `raise HTTPException` em `app/services/` | 15 | 0 |
+| Complexidade ciclomática de `collect_analysis` | 11 | 3 |
+| Maior complexidade ciclomática em `app/services/` | 11 | 7 (`analyze_event`, `analysis_events`) |
+| Implementações da busca de empresa por site em `companies.py` | 2 | 1 |
+| Linhas em `app/web/routes.py` | 620 | 637 (+17: `safe_href` e captura de `ApplicationError`) |
+| Testes automatizados coletados | 162 | 177 |
+| Rotas REST no OpenAPI / URLs Web | 13 / 16 | 13 / 16 |
+
+## Dívidas remanescentes da frente Core
+
+- Regra de comparação de sites do wizard diferente de `normalize_website` (seção 4).
+- Contagens da resposta HTMX da coleta calculadas sobre todos os eventos da análise (limitação registrada no `backend/README.md` e fixada por teste).
+- Formato de `website` não validado na entrada; a proteção contra esquemas executáveis está na saída ([02-security-audit.md](02-security-audit.md)).
+- Busca de empresa por site carrega todas as empresas com site e normaliza em Python; adequado ao volume do MVP, mas linear no número de empresas.
