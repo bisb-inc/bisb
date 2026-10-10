@@ -427,6 +427,41 @@ def test_collection_failure_rolls_back_only_the_failed_company_provider_pair(fun
     ]
 
 
+def test_collection_database_failure_discards_pending_events_of_that_pair_only(functional_db):
+    news = StubProvider(
+        EventSource.GNEWS,
+        by_company={
+            "Alfa": [_record(url="https://news.example/alfa-1"), _record(url=None)],
+            "Beta": [_record(url="https://news.example/beta")],
+        },
+    )
+    x = StubProvider(EventSource.X, records=[_record(source=EventSource.X, url="https://x.example")])
+    with functional_db() as session:
+        analysis = _seed_analysis(session, "Alfa", "Beta")
+        result = collect_analysis(
+            session, analysis.id, date(2026, 9, 1), date(2026, 9, 2), providers=[news, x]
+        )
+        stored = sorted(
+            (event.company.name, event.source.value, event.url)
+            for event in session.scalars(select(Event))
+        )
+
+    assert result.status == "partial"
+    assert [(item.status, item.fetched, item.persisted) for item in result.providers] == [
+        ("failure", 2, 0),
+        ("success", 1, 1),
+        ("success", 1, 1),
+        ("success", 1, 1),
+    ]
+    assert result.providers[0].error == PROVIDER_ERROR
+    assert (result.fetched, result.persisted) == (5, 3)
+    assert stored == [
+        ("Alfa", "X", "https://x.example"),
+        ("Beta", "GNEWS", "https://news.example/beta"),
+        ("Beta", "X", "https://x.example"),
+    ]
+
+
 def test_collection_deduplicates_within_a_batch_and_across_collections(functional_db):
     duplicated = StubProvider(
         EventSource.GNEWS, records=[_record(url="https://news.example/same")] * 2
