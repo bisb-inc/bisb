@@ -435,7 +435,9 @@ def test_collection_database_failure_discards_pending_events_of_that_pair_only(f
             "Beta": [_record(url="https://news.example/beta")],
         },
     )
-    x = StubProvider(EventSource.X, records=[_record(source=EventSource.X, url="https://x.example")])
+    x = StubProvider(
+        EventSource.X, records=[_record(source=EventSource.X, url="https://x.example")]
+    )
     with functional_db() as session:
         analysis = _seed_analysis(session, "Alfa", "Beta")
         result = collect_analysis(
