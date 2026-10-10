@@ -22,6 +22,7 @@ Diferencie sempre **MVP base**, **extensões já implementadas** e **roadmap fut
 ## Diretrizes de implementação
 
 - Rotas cuidam da interface HTTP; regras de negócio coordenam operações; persistência mantém os dados; providers isolam fontes externas.
+- Serviços não dependem de FastAPI. Falhas esperadas usam os erros de `app/services/errors.py` (`NotFoundError`, `ConflictError`, `BusinessRuleError`), traduzidos para 404, 409 e 422 em `app/http_errors.py`, com o corpo `{"detail": ...}`.
 - Adicionar serviços, modelos e providers quando houver comportamento concreto, sem camadas vazias ou substituição desnecessária da base existente.
 - Providers reais e mockados devem atender à mesma abstração e retornar dados normalizados para o domínio. Não propagar contratos externos pelas regras de negócio.
 - Identificar eventos simulados por `is_mock`, inclusive na apresentação. Garantir demonstração local com mocks compatíveis quando integrações reais forem inviáveis.

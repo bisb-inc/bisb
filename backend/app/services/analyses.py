@@ -1,10 +1,10 @@
-from fastapi import HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
 from app.models import Analysis, AnalysisCompany, CompanyRole
 from app.schemas import AnalysisCreate, CompanyInput
 from app.services.companies import get_or_create_company
+from app.services.errors import BusinessRuleError, ConflictError, NotFoundError
 
 
 def _analysis_query():
@@ -24,7 +24,7 @@ def list_analyses(session: Session) -> list[Analysis]:
 def get_analysis(session: Session, analysis_id: int) -> Analysis:
     analysis = session.scalar(_analysis_query().where(Analysis.id == analysis_id))
     if analysis is None:
-        raise HTTPException(status_code=404, detail="Análise não encontrada")
+        raise NotFoundError("Análise não encontrada")
     return analysis
 
 
@@ -32,7 +32,7 @@ def rename_analysis(session: Session, analysis_id: int, name: str) -> Analysis:
     analysis = get_analysis(session, analysis_id)
     cleaned = name.strip()
     if not cleaned:
-        raise HTTPException(status_code=422, detail="O nome da análise é obrigatório")
+        raise BusinessRuleError("O nome da análise é obrigatório")
     analysis.name = cleaned
     session.commit()
     return get_analysis(session, analysis_id)
@@ -47,9 +47,7 @@ def create_analysis(session: Session, data: AnalysisCreate) -> Analysis:
         for competitor_data in data.competitors:
             competitor = get_or_create_company(session, competitor_data)
             if competitor.id == target.id:
-                raise HTTPException(
-                    status_code=422, detail="TARGET não pode também ser concorrente."
-                )
+                raise BusinessRuleError("TARGET não pode também ser concorrente.")
             analysis.companies.append(
                 AnalysisCompany(company=competitor, role=CompanyRole.COMPETITOR)
             )
@@ -67,7 +65,7 @@ def add_competitor(session: Session, analysis_id: int, data: CompanyInput) -> An
         link.company_id == company.id and link.role == CompanyRole.TARGET
         for link in analysis.companies
     ):
-        raise HTTPException(status_code=422, detail="A empresa-alvo não pode ser concorrente.")
+        raise BusinessRuleError("A empresa-alvo não pode ser concorrente.")
     if not any(link.company_id == company.id for link in analysis.companies):
         analysis.companies.append(AnalysisCompany(company=company, role=CompanyRole.COMPETITOR))
     session.commit()
@@ -78,8 +76,8 @@ def remove_competitor(session: Session, analysis_id: int, company_id: int) -> No
     analysis = get_analysis(session, analysis_id)
     link = next((item for item in analysis.companies if item.company_id == company_id), None)
     if link is None:
-        raise HTTPException(status_code=404, detail="Empresa não vinculada a esta análise")
+        raise NotFoundError("Empresa não vinculada a esta análise")
     if link.role == CompanyRole.TARGET:
-        raise HTTPException(status_code=409, detail="A empresa TARGET não pode ser removida.")
+        raise ConflictError("A empresa TARGET não pode ser removida.")
     analysis.companies.remove(link)
     session.commit()

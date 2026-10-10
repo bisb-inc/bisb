@@ -25,6 +25,7 @@ from app.services.analyses import (
 )
 from app.services.collection import collect_analysis
 from app.services.companies import update_company
+from app.services.errors import ApplicationError
 from app.services.event_analysis import analyze_event
 from app.services.events import analysis_events
 
@@ -333,8 +334,8 @@ async def create_analysis_form(request: Request, session: Annotated[Session, Dep
     )
     try:
         analysis = create_analysis(session, data)
-    except HTTPException as exc:
-        return _render_wizard(request, 5, state, str(exc.detail))
+    except ApplicationError as exc:
+        return _render_wizard(request, 5, state, exc.message)
     try:
         result = collect_analysis(
             session,

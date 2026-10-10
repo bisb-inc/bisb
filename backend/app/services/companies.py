@@ -1,12 +1,12 @@
 import re
 from urllib.parse import urlsplit
 
-from fastapi import HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models import Company
 from app.schemas import CompanyInput
+from app.services.errors import ConflictError, NotFoundError
 
 
 def normalize_website(value: str | None) -> str | None:
@@ -35,11 +35,8 @@ def get_or_create_company(session: Session, data: CompanyInput) -> Company:
                 re.sub(r"\s+", " ", matched.name).casefold()
                 != re.sub(r"\s+", " ", data.name).casefold()
             ):
-                raise HTTPException(
-                    status_code=409,
-                    detail=(
-                        "O site já está associado a outra empresa; revise o nome antes de mesclar."
-                    ),
+                raise ConflictError(
+                    "O site já está associado a outra empresa; revise o nome antes de mesclar."
                 )
             return matched
 
@@ -52,7 +49,7 @@ def get_or_create_company(session: Session, data: CompanyInput) -> Company:
 def update_company(session: Session, company_id: int, data: CompanyInput) -> Company:
     company = session.get(Company, company_id)
     if company is None:
-        raise HTTPException(status_code=404, detail="Empresa não encontrada")
+        raise NotFoundError("Empresa não encontrada")
     site_key = normalize_website(data.website)
     if site_key:
         matches = session.scalars(
@@ -60,7 +57,7 @@ def update_company(session: Session, company_id: int, data: CompanyInput) -> Com
         ).all()
         for other in matches:
             if normalize_website(other.website) == site_key:
-                raise HTTPException(status_code=409, detail="O site já identifica outra empresa.")
+                raise ConflictError("O site já identifica outra empresa.")
     for key, value in data.model_dump().items():
         setattr(company, key, value)
     session.commit()

@@ -1,12 +1,12 @@
 from datetime import UTC, datetime
 
-from fastapi import HTTPException
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, joinedload
 
 from app.models import Event, EventAnalysis
 from app.providers.analysis import AnalysisProvider, AnalysisProviderError
+from app.services.errors import ConflictError, NotFoundError
 
 
 def analyze_event(
@@ -23,7 +23,7 @@ def analyze_event(
         .with_for_update(of=Event)
     )
     if event is None:
-        raise HTTPException(status_code=404, detail="Evento não encontrado")
+        raise NotFoundError("Evento não encontrado")
     if event.event_analysis is not None and not force:
         return event.event_analysis
 
@@ -55,9 +55,7 @@ def analyze_event(
         winner = session.get(EventAnalysis, event_id)
         if winner is not None and not force:
             return winner
-        raise HTTPException(
-            status_code=409, detail="Não foi possível salvar a análise concorrente"
-        ) from None
+        raise ConflictError("Não foi possível salvar a análise concorrente") from None
     session.refresh(current)
     return current
 

@@ -1,11 +1,11 @@
 from datetime import UTC, date, datetime, time, timedelta
 
-from fastapi import HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session, joinedload
 
 from app.models import Company, Event
 from app.services.analyses import get_analysis
+from app.services.errors import BusinessRuleError, NotFoundError
 
 
 def analysis_events(
@@ -19,7 +19,7 @@ def analysis_events(
     analysis = get_analysis(session, analysis_id)
     linked_ids = [link.company_id for link in analysis.companies]
     if company_id is not None and company_id not in linked_ids:
-        raise HTTPException(status_code=422, detail="A empresa não pertence a esta análise")
+        raise BusinessRuleError("A empresa não pertence a esta análise")
     statement = (
         select(Event)
         .options(joinedload(Event.company), joinedload(Event.event_analysis))
@@ -38,9 +38,7 @@ def analysis_events(
             Event.published_at < datetime.combine(to_date + timedelta(days=1), time.min, tzinfo=UTC)
         )
     if from_date is not None and to_date is not None and from_date > to_date:
-        raise HTTPException(
-            status_code=422, detail="A data inicial deve ser anterior ou igual à data final"
-        )
+        raise BusinessRuleError("A data inicial deve ser anterior ou igual à data final")
     return list(
         session.scalars(
             statement.order_by(Event.published_at.desc(), Event.collected_at.desc())
@@ -50,7 +48,7 @@ def analysis_events(
 
 def company_events(session: Session, company_id: int) -> list[Event]:
     if session.get(Company, company_id) is None:
-        raise HTTPException(status_code=404, detail="Empresa não encontrada")
+        raise NotFoundError("Empresa não encontrada")
     return list(
         session.scalars(
             select(Event)

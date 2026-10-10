@@ -8,6 +8,7 @@ from app.models import Analysis, AnalysisCompany, Event
 from app.providers import MockNewsProvider, MockXProvider
 from app.providers.base import SourceProvider, utc_range
 from app.schemas import CollectionResult, ProviderOutcome
+from app.services.errors import NotFoundError
 
 logger = logging.getLogger(__name__)
 
@@ -25,9 +26,7 @@ def collect_analysis(
         .where(Analysis.id == analysis_id)
     )
     if analysis is None:
-        from fastapi import HTTPException
-
-        raise HTTPException(status_code=404, detail="Análise não encontrada")
+        raise NotFoundError("Análise não encontrada")
 
     providers = providers if providers is not None else [MockNewsProvider(), MockXProvider()]
     start, end = utc_range(start_date, end_date)
