@@ -107,7 +107,7 @@ Usar HTMX para interações localizadas, como executar coleta, atualizar timelin
 - Tratar `GEMINI_API_KEY` como segredo: nunca registrar, retornar, persistir ou incluir em imagem. Não incluir chaves em prompts enviados ao modelo.
 - Cobrir providers Gemini por cliente mockado; a suíte padrão não deve fazer chamadas externas. Validar API, Web Route HTMX, migração e preservação do evento/resultado anterior em falhas.
 
-A suíte em [backend/tests](../backend/tests) cobre configuração, health, OpenAPI, regras de negócio, providers (incluindo GNews e Gemini com clientes mockados), rotas Web/REST, wizard, fragmentos HTMX e fluxo completo com SQLite isolado. O teste PostgreSQL separado é opt-in, requer uma base dedicada e ainda usa o formulário anterior ao wizard; precisa ser atualizado antes de servir como evidência do fluxo atual.
+A suíte em [backend/tests](../backend/tests) cobre configuração, health, OpenAPI, regras de negócio, providers (incluindo GNews e Gemini com clientes mockados), rotas Web/REST, wizard, fragmentos HTMX e fluxo completo com SQLite isolado. O teste PostgreSQL separado é opt-in, requer uma base dedicada e percorre o fluxo atual do wizard até a timeline e a análise de evento. Os testes de caracterização (`test_characterization_core.py` e `test_characterization_web.py`) fixam contratos de erro, semântica da coleta, URLs e respostas HTMX.
 
 Validar o fluxo de análise até a timeline, TARGET único, concorrentes adicionados depois, perfil opcional, fallback de busca, identificação de mocks, deduplicação, filtros, falha parcial e preservação dos eventos. Tratar estados vazios, carregamento e erro na interface conforme a arquitetura.
 

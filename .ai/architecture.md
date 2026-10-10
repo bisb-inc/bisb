@@ -110,4 +110,4 @@ X real, autenticação/autorização, agendamento, workers, filas, alertas, craw
 
 ## Limitações conhecidas
 
-As limitações da implementação atual estão registradas em [backend/README.md](../backend/README.md#limitações-conhecidas): as contagens da resposta HTMX da coleta e o teste PostgreSQL opt-in desatualizado. Não são decisões arquiteturais pendentes.
+A limitação conhecida da implementação atual está registrada em [backend/README.md](../backend/README.md#limitações-conhecidas): as contagens da resposta HTMX da coleta. Não é uma decisão arquitetural pendente.

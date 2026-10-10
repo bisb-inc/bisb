@@ -233,7 +233,7 @@ uv run --locked alembic check
 npm run build
 ```
 
-Os testes padrão usam SQLite temporário e clientes/providers externos mockados. Por isso, não comprovam integração real com PostgreSQL, GNews ou Gemini. O teste PostgreSQL opt-in precisa ser atualizado para o wizard antes de servir como evidência do fluxo atual. As limitações conhecidas estão no [README do backend](backend/README.md#limitações-conhecidas).
+Os testes padrão usam SQLite temporário e clientes/providers externos mockados. Por isso, não comprovam integração real com PostgreSQL, GNews ou Gemini. O teste PostgreSQL opt-in percorre o fluxo atual do wizard em uma base dedicada. As limitações conhecidas estão no [README do backend](backend/README.md#limitações-conhecidas).
 
 ## Entregáveis da disciplina
 
@@ -248,7 +248,6 @@ Os testes padrão usam SQLite temporário e clientes/providers externos mockados
 
 - Definir o cenário final e gravar o vídeo de demonstração de 3 a 10 minutos.
 - Confirmar o acesso/visibilidade do repositório exigido para a entrega.
-- Atualizar e executar o teste PostgreSQL opt-in para o fluxo do wizard.
 - Corrigir as limitações conhecidas registradas no [README do backend](backend/README.md#limitações-conhecidas), se o grupo decidir tratá-las antes da entrega.
 
 A integração real com o X é uma evolução opcional não implementada e não bloqueia o MVP: os providers mockados permitem executar localmente e demonstrar o fluxo completo sem credenciais externas.
