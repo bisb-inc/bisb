@@ -23,22 +23,38 @@ def normalize_website(value: str | None) -> str | None:
     return f"{netloc}{path}{suffix}{fragment}" or None
 
 
+def _find_company_by_website(
+    session: Session, website: str | None, *, exclude_id: int | None = None
+) -> Company | None:
+    """Retorna a empresa identificada pelo mesmo site normalizado, se houver."""
+    site_key = normalize_website(website)
+    if site_key is None:
+        return None
+    statement = select(Company).where(Company.website.is_not(None))
+    if exclude_id is not None:
+        statement = statement.where(Company.id != exclude_id)
+    return next(
+        (
+            company
+            for company in session.scalars(statement).all()
+            if normalize_website(company.website) == site_key
+        ),
+        None,
+    )
+
+
+def _name_key(name: str) -> str:
+    return re.sub(r"\s+", " ", name).casefold()
+
+
 def get_or_create_company(session: Session, data: CompanyInput) -> Company:
-    site_key = normalize_website(data.website)
-    if site_key:
-        matches = session.scalars(select(Company).where(Company.website.is_not(None))).all()
-        matched = next(
-            (company for company in matches if normalize_website(company.website) == site_key), None
-        )
-        if matched:
-            if (
-                re.sub(r"\s+", " ", matched.name).casefold()
-                != re.sub(r"\s+", " ", data.name).casefold()
-            ):
-                raise ConflictError(
-                    "O site já está associado a outra empresa; revise o nome antes de mesclar."
-                )
-            return matched
+    matched = _find_company_by_website(session, data.website)
+    if matched:
+        if _name_key(matched.name) != _name_key(data.name):
+            raise ConflictError(
+                "O site já está associado a outra empresa; revise o nome antes de mesclar."
+            )
+        return matched
 
     company = Company(**data.model_dump())
     session.add(company)
@@ -50,14 +66,8 @@ def update_company(session: Session, company_id: int, data: CompanyInput) -> Com
     company = session.get(Company, company_id)
     if company is None:
         raise NotFoundError("Empresa não encontrada")
-    site_key = normalize_website(data.website)
-    if site_key:
-        matches = session.scalars(
-            select(Company).where(Company.id != company_id, Company.website.is_not(None))
-        ).all()
-        for other in matches:
-            if normalize_website(other.website) == site_key:
-                raise ConflictError("O site já identifica outra empresa.")
+    if _find_company_by_website(session, data.website, exclude_id=company_id):
+        raise ConflictError("O site já identifica outra empresa.")
     for key, value in data.model_dump().items():
         setattr(company, key, value)
     session.commit()

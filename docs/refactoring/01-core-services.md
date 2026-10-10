@@ -51,3 +51,19 @@ Evidências das intervenções da frente Core/Services sobre o baseline registra
 | Maior complexidade entre as funções de `collection.py` | 11 | 4 (`_validate_records`) |
 | Linhas de `collect_analysis` (da assinatura ao fim do `return`) | 83 | 23 |
 | Consultas próprias de carregamento de `Analysis` em `collection.py` | 1 | 0 (reutiliza `get_analysis`) |
+
+## 4. Identidade de empresa por site
+
+- **Investigação:** a regra de identificação por site aparece em três pontos. Em `app/services/companies.py`, `get_or_create_company` e `update_company` repetiam a mesma busca — carregar empresas com site e procurar a primeira cujo `normalize_website` coincide — diferindo apenas na exclusão da própria empresa na edição. Em `app/web/routes.py`, `_validate_wizard_step` compara sites dos concorrentes com `rstrip("/").lower()`/`casefold()`, uma regra diferente de `normalize_website`. Não há outra regra de site nas rotas REST, nos schemas ou nas migrações.
+- **Confirmado e tratado (serviços):** duplicação real dentro de `companies.py`. **Técnica:** DRY; Single Source of Truth; Extract Method. A busca passou a existir apenas em `_find_company_by_website(session, website, exclude_id=None)`, reutilizada pelas duas funções; a comparação de nomes ganhou o nome `_name_key`. A consulta SQL, a ordem de avaliação (404 antes do conflito na edição) e as mensagens são as mesmas.
+- **Confirmado e não alterado (wizard):** a regra do wizard diverge da regra do serviço, mas unificá-la mudaria o comportamento observável — um concorrente igual ao TARGET escrito sem protocolo (`alfa.example` × `https://alfa.example`) passaria a ser recusado na etapa 3 com a mensagem do wizard, em vez de na confirmação com a mensagem do serviço. O resultado final já é seguro: o serviço recusa o cadastro e nenhuma análise é criada (`test_wizard_site_rule_differs_from_service_identity_rule`). A mudança também pertence à Web Layer. Fica registrada como dívida para decisão do grupo.
+- **Arquivos:** `app/services/companies.py`.
+- **Comportamento preservado:** `test_normalize_website_ignores_only_trivial_differences`, `test_company_identity_reuses_site_variants_with_equivalent_names`, `test_rest_competitor_addition_is_idempotent_and_own_site_can_be_kept`, conflitos 409 de criação e edição em `test_rest_business_rule_errors_keep_status_and_detail` e pela Web em `test_web_routes_expose_service_errors_with_same_status_and_detail`.
+- **Testes:** `pytest -q` → 165 passed, 1 skipped; teste PostgreSQL opt-in → 1 passed; `ruff check` e `ruff format --check` sem apontamentos.
+
+| Métrica | Antes | Depois |
+| --- | ---: | ---: |
+| Implementações da busca de empresa por site normalizado em `companies.py` | 2 | 1 |
+| Complexidade ciclomática de `update_company` | 6 | 4 |
+| Complexidade ciclomática de `get_or_create_company` | 4 | 3 |
+| Regras distintas de comparação de site na aplicação | 2 | 2 (wizard mantido, ver acima) |
