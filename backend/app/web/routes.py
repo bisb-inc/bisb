@@ -4,7 +4,7 @@ from calendar import monthrange
 from datetime import date, timedelta
 from pathlib import Path
 from typing import Annotated, Any
-from urllib.parse import urlencode
+from urllib.parse import urlencode, urlsplit
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -32,6 +32,22 @@ from app.services.events import analysis_events
 logger = logging.getLogger(__name__)
 templates = Jinja2Templates(directory=str(Path(__file__).resolve().parent / "templates"))
 router = APIRouter(tags=["Web UI"])
+
+_LINK_SCHEMES = {"", "http", "https"}
+
+
+def safe_href(url: str) -> str:
+    """Mantém links http(s) e relativos; troca esquemas executáveis (`javascript:`) por `#`."""
+    # Navegadores ignoram espaços e caracteres de controle ao interpretar o esquema.
+    compact = "".join(char for char in url if char > " ")
+    try:
+        scheme = urlsplit(compact).scheme.lower()
+    except ValueError:
+        return "#"
+    return url if scheme in _LINK_SCHEMES else "#"
+
+
+templates.env.filters["safe_href"] = safe_href
 
 
 def _context(request: Request, **values: Any) -> dict[str, Any]:
