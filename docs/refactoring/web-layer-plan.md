@@ -219,16 +219,4 @@ Dívidas e código sem uso fora de `app/web/`, só registradas:
 
 ## 8. Prompts utilizados
 
-Prompts do usuário que originaram e ajustaram este plano, transcritos como foram enviados.
-
-**Prompt 1 — pedido inicial**
-
-> Preciso que refatore algumas partes do nosso MVP. Conforme o plano em MD anexo, preciso que foque primeiramente em algumas partes específicas: redução das responsabilidades concentradas em ./backend/app/web/routes.py. Ao mesmo tempo, verifique a possibilidade da estraturação em helpers, wizards e workspaces. O que pode ser lixo e não estar mais sendo utilizado com base nas referências, se estiver sendo usado apenas em testes e em mais nenhuma outra camada ou serviço, pode remover. Inicialmente faça esse levantamento e crie um outro arquivo .MD com o planejamento e estrutura alvo.
-
-**Prompt 2 — testes e paralelismo**
-
-> Anexe no plano também a alteração dos testes relacionados as alterações. Separa tudo isso em sub-tarefas e quando possível, utilize agentes em paralelo para executar as tarefas.
-
-**Prompt 3 — registro de alterações**
-
-> Ao mesmo tempo que faz alterações, peça para os agentes que façam um curto registro do que alteraram, como era e como ficou. Quando tudo estiver finalizado, coloque tudo em um novo MD e deixe espaço para que o Felipe faça o mesmo
+Registrados em [prompts/refactoring/03-web-layer-refactoring.md](../../prompts/refactoring/03-web-layer-refactoring.md).
