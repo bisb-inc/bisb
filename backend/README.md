@@ -155,7 +155,7 @@ O teste opt-in percorre o wizard, a criação com coleta inicial, o Setup, uma n
 
 ## Limitações conhecidas
 
-- **Contagens após a coleta HTMX:** a resposta da coleta calcula o contador, os destaques e a distribuição por empresa a partir de todos os eventos da análise, enquanto a URL enviada em `HX-Push-Url` contém o intervalo coletado. Ao recarregar essa URL, o filtro de período é aplicado e as contagens podem mudar. Ver [Web Routes](app/web/routes.py).
+- **Contagens após a coleta HTMX:** a resposta da coleta calcula o contador, os destaques e a distribuição por empresa a partir de todos os eventos da análise, enquanto a URL enviada em `HX-Push-Url` contém o intervalo coletado. Ao recarregar essa URL, o filtro de período é aplicado e as contagens podem mudar. Ver [Web Routes](app/web/routes/).
 
 Esse ponto é uma limitação concreta da implementação atual, não uma funcionalidade futura nem uma decisão arquitetural pendente. X real, paginação e coordenação de coletas concorrentes permanecem fora da implementação.
 

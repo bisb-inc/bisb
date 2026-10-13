@@ -112,7 +112,7 @@ def test_ui_flow_create_add_collect_deduplicate_and_filter(functional_client, fu
         "Bancos digitais · Brasil"
         in functional_client.get(f"/ui/analyses/{analysis_id}/setup").text
     )
-    updated = functional_client.put(
+    updated = functional_client.post(
         "/ui/companies/1",
         data={
             "analysis_id": analysis_id,
@@ -254,7 +254,7 @@ def test_wizard_can_remove_competitor_without_losing_target(functional_client):
 
 
 def test_failed_initial_collection_keeps_new_analysis(functional_client, monkeypatch):
-    from app.web import routes
+    from app.web.routes import wizard as routes
 
     def fail_collection(*args, **kwargs):
         raise RuntimeError("provider failure")

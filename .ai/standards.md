@@ -40,7 +40,12 @@ Estrutura atual em `backend/`:
 app/
 ├── api/routes/          # REST API (analyses, event_analyses, health)
 ├── web/
-│   ├── routes.py        # Web Routes: lista, wizard, workspace, Setup, coleta, análise de evento
+│   ├── router.py        # compõe os sub-routers de routes/
+│   ├── templating.py    # Jinja2Templates e is_htmx
+│   ├── periods.py       # lógica pura da Web: períodos
+│   ├── wizard.py        # lógica pura da Web: estado do wizard
+│   ├── workspace.py     # lógica pura da Web: workspace
+│   ├── routes/          # Web Routes (camada HTTP): pages, wizard, workspace, setup, event_analysis
 │   └── templates/       # base, analyses, wizard, analysis (Timeline)
 │       ├── workspace/   # overview, companies, setup
 │       └── partials/    # fragmentos HTMX reutilizados

@@ -12,7 +12,7 @@ from app.db.session import build_engine
 from app.http_errors import register_error_handlers
 from app.providers import configured_providers
 from app.providers.analysis import configured_analysis_provider
-from app.web.routes import router as web_router
+from app.web.router import router as web_router
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
