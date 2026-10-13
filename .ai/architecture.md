@@ -59,7 +59,7 @@ Monólito modular FastAPI. Web UI e REST API são duas interfaces para os mesmos
 | Componente | Local | Responsabilidade |
 | --- | --- | --- |
 | Web Routes | `app/web/router.py`, `app/web/routes/` (`pages`, `wizard`, `workspace`, `setup`, `event_analysis`) | Camada HTTP: navegação, formulários e HTMX; retornam páginas ou fragmentos Jinja2. `router.py` compõe os sub-routers |
-| Lógica da Web | `app/web/templating.py`, `periods.py`, `wizard.py`, `workspace.py` | `Jinja2Templates` e `is_htmx`; lógica pura de períodos, wizard e workspace |
+| Lógica da Web | `app/web/templating.py`, `periods.py`, `wizard.py`, `workspace.py` | `Jinja2Templates`, filtro `safe_href` e `is_htmx`; lógica pura de períodos, wizard e workspace |
 | Templates | `app/web/templates/` (`workspace/`, `partials/`) | Apresentação; sem regra de negócio nem acesso ao banco |
 | REST API Routes | `app/api/routes/` | Contratos REST oficiais e da extensão de análise |
 | Application / Services | `app/services/` | Análises, empresas, coleta, eventos e análise de eventos |
@@ -87,7 +87,7 @@ Seleção de providers, feita em `create_app`:
   - **Empresas**: TARGET e concorrentes, com link para o Setup.
 - **Setup** (`/ui/analyses/{id}/setup`): nome da análise, adição/remoção de concorrentes, nome/site, perfil manual e `search_term` de cada empresa.
 
-As antigas abas “Monitoramento” e “Perfil da empresa” não existem mais.
+Os parâmetros antigos `?tab=profile` e `?tab=monitoring` apenas redirecionam para Setup e Timeline; as antigas abas “Monitoramento” e “Perfil da empresa” não existem mais.
 
 ## Fluxos
 

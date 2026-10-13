@@ -11,7 +11,7 @@ A Entrega 2 exige modernizar o Bisb sem novas features, sem alterar URLs, templa
 
 ## 2. Diagnóstico de `app/web/routes.py` (antes)
 
-Métricas medidas: **620 linhas, 27 funções, 16 decoradores de rota** (15 URLs distintas; `/ui/companies/{id}` tem POST e PUT).
+Métricas medidas: **620 linhas, 27 funções, 16 decoradores de rota**: 16 combinações caminho/método em 13 caminhos Web distintos (`/ui/analyses` e `/ui/analyses/{id}/setup` têm GET e POST; `/ui/companies/{id}` tem POST e PUT).
 
 | # | Responsabilidade misturada | Funções / linhas | Observação |
 |---|---|---|---|
@@ -44,6 +44,8 @@ Métricas medidas: **620 linhas, 27 funções, 16 decoradores de rota** (15 URLs
 Método: grep de cada símbolo, rota e parâmetro em `app/` (código, templates, JS) e `tests/`. Regra do pedido: referenciado só em testes, ou em nada, pode sair.
 
 ### 3.1 Remover (Web Layer, dentro do meu escopo)
+
+> **Decisão na integração:** PUT `/ui/companies/{id}`, `?tab=profile`/`?tab=monitoring` e `?step=` são contratos de compatibilidade da Entrega 1, preservados por decisão de paridade. Dos itens desta tabela, PUT, `?tab=` e `?step=` permanecem; a remoção do uso de `CollectionRequest` na rota collect se mantém, sem efeito externo.
 
 | Item | Evidência | Ação |
 |---|---|---|
@@ -95,7 +97,7 @@ Convenção: `web/<x>.py` contém lógica pura da área e `web/routes/<x>.py` co
 | `create_analysis_form` | `routes/wizard.py` | Nenhuma. O `except HTTPException` de `create_analysis` fica concentrado em **um** ponto (alvo do merge da Frente B). |
 
 ### Invariantes (conferir no final)
-- As **15 URLs** e seus métodos permanecem, exceto o `PUT /ui/companies/{id}` removido (3.1). `app.routes` é comparado antes e depois.
+- As 16 combinações caminho/método (13 caminhos Web distintos) permanecem, incluindo `PUT /ui/companies/{id}` (decisão na integração, 3.1). `app.routes` é comparado antes e depois.
 - Mesmos nomes de template e mesmas chaves de contexto. Os templates não são editados.
 - Mesmos status HTTP, mensagens de erro e headers (`HX-Push-Url`).
 - Não há nova abstração, classe ou dependência. Só funções movidas, mais 3 helpers de DRY.
@@ -126,7 +128,7 @@ Mais: (a) diff do conjunto de rotas (`[(r.path, sorted(r.methods)) for r in app.
 |---|---:|---|
 | Linhas em `web/routes.py` | 620 | arquivo removido; medir cada módulo novo |
 | Funções no módulo Web principal | 27 | medir por módulo |
-| Rotas (decoradores) | 16 | 15 (PUT removido), mesmas URLs |
+| Rotas (decoradores) | 16 | 16, mesmas combinações caminho/método |
 | Maior módulo de rotas | 620 | medir |
 | Suíte | registrar | registrar |
 
@@ -202,8 +204,8 @@ A Frente B vem com o template do bloco e com a lista de observações da seção
 
 ## 6. Riscos e decisões que dependem de você
 
-1. **Remover `PUT /ui/companies/{id}`** muda a superfície da Web UI (§2 do plano veta alterar URLs "sem necessidade"). Como só o teste usa, a recomendação é remover, conforme sua regra. Se preferir ser conservador, deixo o PUT e só o marco como dívida.
-2. **Remover os redirects `?tab=`.** Eles quebram marcadores antigos, se existirem. Não há referência no código. Recomendo remover.
+1. **Remover `PUT /ui/companies/{id}`** muda a superfície da Web UI (§2 do plano veta alterar URLs "sem necessidade"). Como só o teste usa, a recomendação é remover, conforme sua regra. Se preferir ser conservador, deixo o PUT e só o marco como dívida. **Decisão:** mantido como contrato de compatibilidade (3.1).
+2. **Remover os redirects `?tab=`.** Eles quebram marcadores antigos, se existirem. Não há referência no código. Recomendo remover. **Decisão:** mantidos como contrato de compatibilidade, assim como `?step=` (3.1).
 3. **O `monkeypatch` em `test_functional_mvp.py:262`** passa a mirar `app.web.routes.wizard.collect_analysis`. É um ajuste de teste, não de comportamento.
 4. **Conflito com a Frente B:** a remoção de `HTTPException` dos services vai mexer em `routes/wizard.py` (`create_analysis`), `routes/setup.py` e `routes/workspace.py`. Por isso o merge da Web vem primeiro (§9 do plano).
 

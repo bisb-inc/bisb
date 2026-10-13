@@ -41,7 +41,7 @@ app/
 ├── api/routes/          # REST API (analyses, event_analyses, health)
 ├── web/
 │   ├── router.py        # compõe os sub-routers de routes/
-│   ├── templating.py    # Jinja2Templates e is_htmx
+│   ├── templating.py    # Jinja2Templates, filtro safe_href e is_htmx
 │   ├── periods.py       # lógica pura da Web: períodos
 │   ├── wizard.py        # lógica pura da Web: estado do wizard
 │   ├── workspace.py     # lógica pura da Web: workspace
