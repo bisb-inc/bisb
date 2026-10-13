@@ -3,8 +3,8 @@
 **Atividade:** Refatoração de Arquitetura  
 **Projeto:** Bisb — Competitive Monitor  
 **Versão original:** `v1.0-mvp` (`0274c56`)  
-**Baseline de caracterização:** `refactoring` (`0656238`)  
-**Resultado final integrado:** `refactor/integration` (`91fe184`)  
+**Baseline de caracterização:** commit `0656238`, primeiro commit da branch `refactoring`  
+**Resultado final integrado:** branch `refactoring`, com o histórico integral de `refactor/integration`; os commits finais alteram apenas documentação  
 **Data da consolidação:** 13/10/2026
 
 ---
@@ -104,7 +104,7 @@ Isso tornou possível comparar continuamente o estado refatorado com o comportam
 
 ### 3.2 Blindagem pré-refactoring
 
-A branch `refactoring` foi criada diretamente a partir de `v1.0-mvp`.
+A branch `refactoring` foi criada diretamente a partir de `v1.0-mvp` e recebeu a blindagem no commit `0656238`. Ao final, a mesma branch passou a conter o resultado integrado.
 
 Antes das mudanças arquiteturais foram adicionados testes de caracterização para:
 

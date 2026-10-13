@@ -7,8 +7,8 @@ Registro do comportamento e das métricas da Entrega 1 antes de qualquer altera�
 | Item | Valor |
 | --- | --- |
 | Versão original | tag `v1.0-mvp` (commit `0274c56`), igual a `main` no início do refactoring |
-| Branch do baseline | `refactoring` (commit `0656238`, `test(refactor): establish characterization baseline`) |
-| Resultado final integrado | `refactor/integration` (frente Core/Services e frente Web Layer sobre este baseline; ver [registro-de-alteracoes.md](registro-de-alteracoes.md#integração-e-validação-final)) |
+| Commit do baseline | `0656238` (`test(refactor): establish characterization baseline`), primeiro commit da branch `refactoring` |
+| Resultado final integrado | branch `refactoring`, com o histórico de `refactor/integration` (frente Core/Services e frente Web Layer sobre este baseline; ver [registro-de-alteracoes.md](registro-de-alteracoes.md#integração-e-validação-final)) |
 | Python / FastAPI | Python 3.14 (uv 0.10.4), FastAPI 0.141.1 |
 | Node / npm | Node 22.20.0, npm 10.9.3 |
 | PostgreSQL do teste opt-in | `postgres:16` do Docker Compose do projeto, base dedicada `competitive_monitor_test` |
