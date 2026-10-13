@@ -23,6 +23,7 @@ def analysis_page(
     analysis_id: int,
     session: Annotated[Session, Depends(get_session)],
     view: str = "overview",
+    tab: str | None = None,
     company: str | None = None,
     source: str | None = None,
     from_date: str | None = None,
@@ -30,6 +31,10 @@ def analysis_page(
     collection_status: str | None = None,
     persisted: int | None = None,
 ):
+    if tab == "profile":
+        return RedirectResponse(url=f"/ui/analyses/{analysis_id}/setup", status_code=303)
+    if tab == "monitoring" and view == "overview":
+        view = "timeline"
     if view not in {"overview", "timeline", "companies"}:
         view = "overview"
     company_id, event_source, start, end = filters_or_422(company, source, from_date, to_date)

@@ -71,6 +71,7 @@ def remove_competitor_form(
 
 
 @router.post("/ui/companies/{company_id}", response_class=HTMLResponse, include_in_schema=False)
+@router.put("/ui/companies/{company_id}", response_class=HTMLResponse, include_in_schema=False)
 def update_company_form(
     request: Request,
     company_id: int,

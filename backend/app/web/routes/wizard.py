@@ -35,8 +35,8 @@ def _load_state_or_400(raw: str | None) -> dict:
 
 
 @router.get("/ui/analyses/new", response_class=HTMLResponse, include_in_schema=False)
-def new_analysis_page(request: Request):
-    return _render_wizard(request, 1, wizard.new_state())
+def new_analysis_page(request: Request, step: int = 1):
+    return _render_wizard(request, min(max(step, 1), 5), wizard.new_state())
 
 
 @router.post("/ui/analyses/new/step/{step}", response_class=HTMLResponse, include_in_schema=False)

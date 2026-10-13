@@ -112,7 +112,7 @@ def test_ui_flow_create_add_collect_deduplicate_and_filter(functional_client, fu
         "Bancos digitais · Brasil"
         in functional_client.get(f"/ui/analyses/{analysis_id}/setup").text
     )
-    updated = functional_client.post(
+    updated = functional_client.put(
         "/ui/companies/1",
         data={
             "analysis_id": analysis_id,

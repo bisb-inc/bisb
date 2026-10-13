@@ -38,6 +38,7 @@ EXPECTED_WEB_ROUTES = [
     ("/ui/analyses/{analysis_id}/setup", ["POST"]),
     ("/ui/analyses/{analysis_id}/timeline", ["GET"]),
     ("/ui/companies/{company_id}", ["POST"]),
+    ("/ui/companies/{company_id}", ["PUT"]),
     ("/ui/events/{event_id}/analysis", ["POST"]),
 ]
 
@@ -178,22 +179,40 @@ def test_wizard_invalid_state_json_returns_400(functional_client):
     assert response.status_code == 400
 
 
-def test_legacy_tab_param_is_ignored(functional_client):
+def test_legacy_tab_profile_redirects_to_setup(functional_client):
     analysis_id = _create_analysis(functional_client)["id"]
-    overview = functional_client.get(f"/ui/analyses/{analysis_id}?view=overview")
-    for tab in ("profile", "monitoring"):
-        response = functional_client.get(
-            f"/ui/analyses/{analysis_id}?tab={tab}", follow_redirects=False
-        )
-        assert response.status_code == 200
-        assert response.text == overview.text
+    response = functional_client.get(
+        f"/ui/analyses/{analysis_id}?tab=profile", follow_redirects=False
+    )
+    assert response.status_code == 303
+    assert response.headers["location"] == f"/ui/analyses/{analysis_id}/setup"
 
 
-def test_new_analysis_ignores_step_param(functional_client):
+def test_legacy_tab_monitoring_selects_timeline_only_without_explicit_view(functional_client):
+    analysis_id = _create_analysis(functional_client)["id"]
+    base = f"/ui/analyses/{analysis_id}"
+    timeline = functional_client.get(f"{base}?view=timeline")
+    companies = functional_client.get(f"{base}?view=companies")
+    assert functional_client.get(f"{base}?tab=monitoring").text == timeline.text
+    assert functional_client.get(f"{base}?tab=monitoring&view=companies").text == companies.text
+
+
+def test_new_analysis_step_param_is_clamped(functional_client):
+    assert "Etapa 3 de 5" in functional_client.get("/ui/analyses/new?step=3").text
     default = functional_client.get("/ui/analyses/new")
-    assert functional_client.get("/ui/analyses/new?step=3").text == default.text
+    assert functional_client.get("/ui/analyses/new?step=0").text == default.text
+    assert "Etapa 5 de 5" in functional_client.get("/ui/analyses/new?step=9").text
 
 
-def test_web_company_update_rejects_put(functional_client):
-    response = functional_client.put("/ui/companies/1", data={"name": "A", "website": "a.example"})
-    assert response.status_code == 405
+def test_new_analysis_non_integer_step_returns_422(functional_client):
+    assert functional_client.get("/ui/analyses/new?step=abc").status_code == 422
+
+
+def test_web_company_update_accepts_put_like_post(functional_client):
+    analysis_id = _create_analysis(functional_client)["id"]
+    company_id = _target_company_id(functional_client, analysis_id)
+    data = {"analysis_id": analysis_id, "name": "Alfa Bank", "website": "https://www.alfa.example/"}
+    for send in (functional_client.post, functional_client.put):
+        response = send(f"/ui/companies/{company_id}", data=data, follow_redirects=False)
+        assert response.status_code == 303
+        assert response.headers["location"] == f"/ui/analyses/{analysis_id}/setup?saved=1#companies"
