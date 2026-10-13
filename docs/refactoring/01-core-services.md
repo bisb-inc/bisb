@@ -109,6 +109,8 @@ Evidências das intervenções da frente Core/Services sobre o baseline registra
 | Rotas REST no OpenAPI (caminho/método) | 13 | 13 |
 | Web: combinações caminho/método / caminhos distintos | 16 / 13 | 16 / 13 |
 
+A linha de `app/web/routes.py` registra o estado intermediário da frente Core. Após a integração com a Web Layer (`refactor/integration`), `app/web/routes.py` deixou de existir: as rotas estão em `app/web/routes/` e o maior módulo Web final, `app/web/routes/workspace.py`, tem 149 linhas.
+
 ## Dívidas remanescentes da frente Core
 
 - Regra de comparação de sites do wizard diferente de `normalize_website` (seção 4).

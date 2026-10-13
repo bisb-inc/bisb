@@ -1,11 +1,10 @@
 # Frente A — Refatoração da Web Layer (Luca): levantamento e estrutura alvo
 
-> Destino após aprovação: copiar para `docs/refactoring/web-layer-plan.md` (ou caminho que preferir).
-> Base: `~/Downloads/bisb_refactoring_plan.md`, seção 6. Nenhum código foi alterado neste levantamento.
+> Base: plano de refactoring da Entrega 2, seção 6 (Web Layer). Este documento registra o levantamento feito antes da alteração de código e as decisões tomadas depois, na integração.
 
 ## 1. Contexto
 
-A Entrega 2 exige modernizar o Bisb sem novas features, sem alterar URLs, templates, contratos REST ou regras de negócio. Minha frente é a **Web Layer**. O alvo é `backend/app/web/routes.py`, que concentra wizard, workspace, períodos, filtros, view-data e ações HTMX. Este documento mapeia as responsabilidades, separa o que é código morto e propõe a estrutura final.
+A Entrega 2 exige modernizar o Bisb sem novas features, sem alterar URLs, templates, contratos REST ou regras de negócio. Minha frente é a **Web Layer**. O alvo é `backend/app/web/routes.py`, que concentra wizard, workspace, períodos, filtros, view-data e ações HTMX. Este documento mapeia as responsabilidades, levanta itens sem uso e propõe a estrutura final.
 
 **Fora do meu escopo** (plano §6.7): `services/*`, `models.py`, `migrations/`, contratos REST. Dívidas encontradas ali ficam na seção 7, como observação para a Frente B.
 
@@ -39,11 +38,11 @@ Métricas medidas: **620 linhas, 27 funções, 16 decoradores de rota**: 16 comb
 4. `_context(request, **v)` apenas adiciona `request`, e Starlette 1.7 (`uv.lock`) já injeta `request` em `TemplateResponse(request=…)`. Ele é redundante.
 5. O `try/except HTTPException` em `_validate_wizard_step` existe só porque o parse de período lança `HTTPException`.
 
-## 3. Levantamento de código morto / sem uso
+## 3. Levantamento de itens sem uso
 
 Método: grep de cada símbolo, rota e parâmetro em `app/` (código, templates, JS) e `tests/`. Regra do pedido: referenciado só em testes, ou em nada, pode sair.
 
-### 3.1 Remover (Web Layer, dentro do meu escopo)
+### 3.1 Candidatos à remoção (Web Layer, dentro do meu escopo)
 
 > **Decisão na integração:** PUT `/ui/companies/{id}`, `?tab=profile`/`?tab=monitoring` e `?step=` são contratos de compatibilidade da Entrega 1, preservados por decisão de paridade. Dos itens desta tabela, PUT, `?tab=` e `?step=` permanecem; a remoção do uso de `CollectionRequest` na rota collect se mantém, sem efeito externo.
 
@@ -81,7 +80,7 @@ app/web/
 └── templates/           # inalterado
 ```
 
-Convenção: `web/<x>.py` contém lógica pura da área e `web/routes/<x>.py` contém só a camada HTTP (parâmetros, chamada a services, resposta). Isso reproduz a referência do plano (§6.2), sem camadas vazias. Quatro arquivos de lógica pura ficam testáveis sem `TestClient`.
+Convenção: `web/<x>.py` contém lógica pura da área e `web/routes/<x>.py` contém só a camada HTTP (parâmetros, chamada a services, resposta). Isso reproduz a referência do plano (§6.2), sem camadas vazias. Três módulos de lógica pura (`periods.py`, `wizard.py`, `workspace.py`) ficam testáveis sem `TestClient`; `templating.py` e `errors.py` dependem de FastAPI.
 
 ### Mapa de migração
 
@@ -91,10 +90,10 @@ Convenção: `web/<x>.py` contém lógica pura da área e `web/routes/<x>.py` co
 | `_wizard_state`, `_sync_step_state`, `_validate_wizard_step` | `wizard.py` | Nenhuma. A validação do passo 4 passa a capturar `ValueError`. |
 | bloco `intent` add/remove de `wizard_step` | `wizard.apply_competitor_intent(state, form, intent) -> erro \| None` | Nenhuma |
 | `_render_wizard` | `routes/wizard.py` | Nenhuma |
-| `_parse_timeline_filters`, `_timeline_context`, `_overview_data` | `workspace.py` | Nenhuma. O contexto recebe `latest_received` explícito. |
+| `_parse_timeline_filters`, `_timeline_context`, `_overview_data` | `workspace.py` | Nenhuma. `timeline_context` aceita `latest_events` opcional, a lista usada para calcular `latest_received` (a coleta passa todos os eventos da análise). |
 | redirect de visão geral (2 cópias) | `workspace.overview_redirect_url` | Nenhuma. A URL gerada é idêntica. |
 | `HX-Request` (5 cópias) | `templating.is_htmx` | Nenhuma |
-| `create_analysis_form` | `routes/wizard.py` | Nenhuma. O `except HTTPException` de `create_analysis` fica concentrado em **um** ponto (alvo do merge da Frente B). |
+| `create_analysis_form` | `routes/wizard.py` | Nenhuma. A captura do erro de `create_analysis` fica concentrada em **um** ponto; na integração com a Frente B, passou a capturar `ApplicationError`. |
 
 ### Invariantes (conferir no final)
 - As 16 combinações caminho/método (13 caminhos Web distintos) permanecem, incluindo `PUT /ui/companies/{id}` (decisão na integração, 3.1). `app.routes` é comparado antes e depois.
@@ -104,13 +103,13 @@ Convenção: `web/<x>.py` contém lógica pura da área e `web/routes/<x>.py` co
 
 ## 5. Plano de execução (commits pequenos, suíte verde a cada passo)
 
-0. **Pré-condição:** baseline da Fase 0 (Felipe) publicado em `refactoring`. Branch `refactor/web-layer` criada dali. Registrar métricas "antes".
+0. **Pré-condição:** registrar métricas "antes". A branch `refactor/web-layer` foi criada a partir de `v1.0-mvp`; a integração com o baseline e a Frente B ocorreu em `refactor/integration`.
 1. **Testes de caracterização Web** (só se faltarem, plano §6.4). Entram: `collect` sem HX-Request redireciona; `analyze` sem HX redireciona; filtro inválido da timeline → 422; intent `back` do wizard; período `custom` inválido → 422; snapshot da lista de rotas (método + path). Commit isolado.
 2. **Extrair `periods.py`** (puro) e ajustar os chamadores.
 3. **Extrair `wizard.py`** (puro), incluindo `apply_competitor_intent`.
-4. **Extrair `workspace.py`** (puro), com `overview_redirect_url` e `latest_received` explícito.
+4. **Extrair `workspace.py`** (puro), com `overview_redirect_url` e `latest_events` opcional em `timeline_context`.
 5. **Criar `templating.py`, `routes/*` e `router.py`**. `main.py` passa a importar `app.web.router`. Atualizar o `monkeypatch` do teste para `app.web.routes.wizard`. Remover `routes.py`.
-6. **Remover código morto** (3.1) em um commit separado, para facilitar o revert: PUT, `?tab=`, `?step=`, `CollectionRequest`. Atualizar o teste do PUT e a frase nos docs.
+6. **Tratar os itens de 3.1** em um commit separado, para facilitar o revert. Estado final: remoção do uso de `CollectionRequest` na rota collect; PUT, `?tab=` e `?step=` preservados como contratos de compatibilidade (decisão na integração).
 7. **Docs:** atualizar `.ai/standards.md` (árvore da seção "Organização da Web UI"), `.ai/architecture.md` (linha "Web Routes" e a nota sobre `?tab=`) e `docs/arquitetura.md`.
 8. **Evidências:** métricas depois e o prompt da frente em `prompts/refactoring/03-web-layer-refactoring.md`. A seção do relatório sobre a Web Layer vem no fim.
 
@@ -138,9 +137,9 @@ Mais: (a) diff do conjunto de rotas (`[(r.path, sorted(r.methods)) for r in app.
 |---|---|---|
 | Rede de segurança (passo 1) | novo `tests/test_web_characterization.py` | `collect` e `analyze` sem HX-Request → 303; filtro inválido → 422; período `custom` inválido → 422; wizard `intent=back`; snapshot de `(path, métodos)` das rotas Web |
 | Extração de `routes/wizard.py` | `test_functional_mvp.py:257-262` (`monkeypatch` em `routes.collect_analysis`) | Alvo passa a `app.web.routes.wizard.collect_analysis`; asserts inalterados |
-| Remoção do `PUT /ui/companies/{id}` | `test_functional_mvp.py:115` (`put`) | Vira `post`; novo teste: `PUT` devolve 405 |
-| Remoção de `?tab=` | nenhum existente | Novo teste: `?tab=profile` não redireciona (renderiza overview) |
-| Remoção de `?step=` | nenhum existente | Novo teste: `/ui/analyses/new?step=3` renderiza o passo 1 |
+| Preservação do `PUT /ui/companies/{id}` | `test_functional_mvp.py:115` (`put`) | Inalterado; snapshot de rotas inclui o PUT; novo teste: PUT responde como o POST (303 para o Setup) |
+| Preservação de `?tab=` | testes de caracterização do baseline | Novos testes: `?tab=profile` → 303 para `/ui/analyses/{id}/setup`; `?tab=monitoring` seleciona a Timeline quando `view` não é informado |
+| Preservação de `?step=` | testes de caracterização do baseline | Novos testes: `?step=3` renderiza a etapa 3; valores fora de 1..5 são limitados; `?step=abc` → 422 |
 | `periods.py` | novo `tests/test_web_periods.py` | presets week/month/quarter, fim de mês (31→30/28), `custom` válido/inválido, mensagens idênticas às atuais |
 | `wizard.py` | novo `tests/test_web_wizard.py` | `new_state` padrão, `sync` por passo, cada regra de `validate_step` (nome, alvo, concorrente vazio/repetido/igual ao alvo, período), `apply_competitor_intent` add/remove/índice inválido, JSON inválido |
 | `workspace.py` | novo `tests/test_web_workspace.py` | `parse_timeline_filters`, `overview_data` (destaques Gemini vs recência, contagem), `overview_redirect_url` idêntica à URL atual |
@@ -150,32 +149,32 @@ Os testes unitários novos não usam `TestClient` nem banco (módulos puros). Os
 
 ## 5.2 Sub-tarefas e paralelismo
 
-Contratos fixados antes de paralelizar (evitam divergência entre agentes):
+Contratos fixados antes de paralelizar (evitam divergência entre sub-tarefas):
 - `periods.parse_period(preset, from_value, to_value) -> tuple[date, date]` (lança `ValueError`); `periods.range_for_preset(preset, today=None)`.
 - `wizard.new_state() -> dict`, `wizard.sync_step(state, form, step)`, `wizard.validate_step(state, step) -> str | None`, `wizard.apply_competitor_intent(state, form, intent) -> str | None`.
-- `workspace.parse_timeline_filters(company, source, from_date, to_date)`, `workspace.timeline_context(analysis, events, latest_received=None, **v)`, `workspace.overview_data(analysis, events)`, `workspace.overview_redirect_url(analysis_id, status, persisted, start, end)`.
+- `workspace.parse_timeline_filters(company, source, from_date, to_date)`, `workspace.timeline_context(analysis, events, latest_events=None, **v)`, `workspace.overview_data(analysis, events)`, `workspace.overview_redirect_url(analysis_id, status, persisted, start, end)`.
 - `templating.templates`, `templating.is_htmx(request)`.
 
 | Onda | Sub-tarefa | Arquivos (disjuntos) | Execução |
 |---|---|---|---|
-| 0 | **T0** Baseline + snapshot de rotas + `test_web_characterization.py`; suíte verde | `tests/` | Sequencial (1 agente) |
+| 0 | **T0** Baseline + snapshot de rotas + `test_web_characterization.py`; suíte verde | `tests/` | Sequencial |
 | 1 | **T1** `periods.py` + `test_web_periods.py` | `web/periods.py` | **Paralelo** |
 | 1 | **T2** `wizard.py` + `test_web_wizard.py` | `web/wizard.py` | **Paralelo** |
 | 1 | **T3** `workspace.py` + `test_web_workspace.py` | `web/workspace.py` | **Paralelo** |
-| 1 | **T4** Docs (`.ai/standards.md`, `.ai/architecture.md`, `docs/arquitetura.md`) para a estrutura alvo e sem `?tab=` | `.ai/`, `docs/` | **Paralelo** |
+| 1 | **T4** Docs (`.ai/standards.md`, `.ai/architecture.md`, `docs/arquitetura.md`) para a estrutura alvo | `.ai/`, `docs/` | **Paralelo** |
 | 2 | **T5** `templating.py`, `router.py`; `main.py` aponta para `app.web.router` (as rotas ainda vêm de `routes.py`) | `web/templating.py`, `web/router.py`, `main.py` | Sequencial |
 | 3 | **T6** `routes/pages.py`, `routes/setup.py`, `routes/event_analysis.py` | `web/routes/` (3 arquivos) | **Paralelo** |
 | 3 | **T7** `routes/wizard.py` + ajuste do `monkeypatch` | `web/routes/wizard.py`, `test_functional_mvp.py:257` | **Paralelo** |
 | 3 | **T8** `routes/workspace.py` | `web/routes/workspace.py` | **Paralelo** |
 | 4 | **T9** Integração: `router.py` inclui os sub-routers, remove `routes.py`, compara snapshot de rotas | `web/` | Sequencial |
-| 5 | **T10** Remoção de código morto (3.1) + testes novos/alterados (5.1) | `web/routes/*`, `tests/` | Sequencial, commit separado |
+| 5 | **T10** Itens de 3.1 + testes novos/alterados (5.1) | `web/routes/*`, `tests/` | Sequencial, commit separado |
 | 6 | **T11** Revisão independente + métricas "depois" + `prompts/refactoring/03-web-layer-refactoring.md` | `prompts/`, relatório | Paralelo entre si |
 
-Regras para os agentes: cada um edita só os arquivos da sua linha; roda `pytest -q`, `ruff check .` e `ruff format --check .` antes de reportar; não toca em `services/`, `models.py`, `migrations/`; sem features novas. A integração (T9/T10) fica a cargo da sessão principal. Agentes em paralelo usam worktrees isolados (`isolation: worktree`) nas ondas 1 e 3, e eu faço o merge entre eles.
+Regras de cada sub-tarefa: editar só os arquivos da sua linha; rodar `pytest -q`, `ruff check .` e `ruff format --check .`; não tocar em `services/`, `models.py`, `migrations/`; sem features novas. A integração dos sub-routers (T9) e a T10 são sequenciais.
 
 ## 5.3 Registro de alterações (feito junto com o código)
 
-Cada agente, ao terminar sua sub-tarefa, grava um registro curto em `<scratchpad>/registro/T<n>.md` (e o repete no relatório final). Formato fixo, no máximo ~15 linhas:
+Cada sub-tarefa gera um registro curto, consolidado em `docs/refactoring/registro-de-alteracoes.md`. Formato fixo, no máximo ~15 linhas:
 
 ```markdown
 ### T<n> — <título>
@@ -184,40 +183,37 @@ Cada agente, ao terminar sua sub-tarefa, grava um registro curto em `<scratchpad
 - **Como ficou:** <2–3 linhas, com módulo e função de destino>
 - **Testes:** <criados / alterados / removidos e por quê>
 - **Verificação:** <comandos rodados e resultado>
-- **Técnica:** <SRP / Extract Module / Extract Method / DRY / remoção de código morto>
+- **Técnica:** <SRP / Extract Module / Extract Method / DRY / remoção de redundância>
 ```
 
-No fim, eu consolido os registros em **`docs/refactoring/registro-de-alteracoes.md`**, com esta estrutura:
+Estrutura de **`docs/refactoring/registro-de-alteracoes.md`**:
 
 ```markdown
 # Registro de alterações — Refatoração (Entrega 2)
 ## Frente A — Web Layer (Luca)
-   (preenchida: resumo, métricas antes/depois, um bloco por T<n>, código removido, decisões)
+   (resumo, métricas antes/depois, um bloco por T<n>, contratos de compatibilidade, decisões)
 ## Frente B — Core / Services / Segurança (Felipe)
-   (espaço reservado, mesmo formato: 7.1 Desacoplar services, 7.2 Coleta, 7.3 DRY website,
-    Baseline/Fase 0, Auditoria de segurança, métricas antes/depois, observações da seção 7 deste plano)
+   (resumo técnico, métricas e referências aos documentos da frente Core)
 ## Integração e validação final
-   (espaço reservado: paridade, suíte completa, revisão independente)
+   (resolução de conflitos, paridade, suíte completa)
 ```
 
-A Frente B vem com o template do bloco e com a lista de observações da seção 7 deste plano já pré-preenchida como ponto de partida. Os agentes do Felipe seguem o mesmo formato.
-
-## 6. Riscos e decisões que dependem de você
+## 6. Riscos e decisões
 
 1. **Remover `PUT /ui/companies/{id}`** muda a superfície da Web UI (§2 do plano veta alterar URLs "sem necessidade"). Como só o teste usa, a recomendação é remover, conforme sua regra. Se preferir ser conservador, deixo o PUT e só o marco como dívida. **Decisão:** mantido como contrato de compatibilidade (3.1).
 2. **Remover os redirects `?tab=`.** Eles quebram marcadores antigos, se existirem. Não há referência no código. Recomendo remover. **Decisão:** mantidos como contrato de compatibilidade, assim como `?step=` (3.1).
 3. **O `monkeypatch` em `test_functional_mvp.py:262`** passa a mirar `app.web.routes.wizard.collect_analysis`. É um ajuste de teste, não de comportamento.
-4. **Conflito com a Frente B:** a remoção de `HTTPException` dos services vai mexer em `routes/wizard.py` (`create_analysis`), `routes/setup.py` e `routes/workspace.py`. Por isso o merge da Web vem primeiro (§9 do plano).
+4. **Conflito com a Frente B:** a remoção de `HTTPException` dos services afeta a captura de erro em `routes/wizard.py` (`create_analysis`). Na integração (`refactor/integration`), a Frente B foi a base e essa captura passou a usar `ApplicationError`; `routes/setup.py` e `routes/workspace.py` não precisaram de ajuste, pois os erros de aplicação são traduzidos pelos handlers globais de `app/http_errors.py`.
 
 ## 7. Observações para a Frente B (não executar aqui)
 
 Dívidas e código sem uso fora de `app/web/`, só registradas:
-- `services/collection.py:35`: o default `providers=None` cai em `MockNewsProvider/MockXProvider`. **Nenhum chamador usa o default** (web, API e os testes de coleta passam `providers=`). É a única razão do import de mocks nesse serviço, ou seja, fallback morto. `HTTPException` é importado dentro da função (linha 29).
+- `services/collection.py:35`: o default `providers=None` cai em `MockNewsProvider/MockXProvider`. As rotas Web e REST sempre passam `providers=`, mas os testes de caracterização da coleta usam o default (`test_collection_defaults_to_mock_news_and_x_providers`, `test_collection_without_companies_or_outcomes_is_failure`); por isso a Frente B o manteve. `HTTPException` é importado dentro da função (linha 29).
 - `services/event_analysis.py:65`: o `__all__` re-exporta `AnalysisProviderError`. Os testes já importam de `app.providers.analysis`, então o re-export é redundante.
 - `providers/__init__.py`: o `__all__` re-exporta `GNewsProvider`, `MockNewsProvider` e `MockXProvider`. Os mocks só são usados por testes e por `collection.py` (ver o primeiro item).
 - `HTTPException` em 5 services (`analyses`, `collection`, `companies`, `event_analysis`, `events`), que é o P1 da Frente B.
 - `normalize_website` só é usada em `services/companies.py` (2 pontos). O wizard compara sites com `rstrip("/").lower()` próprio (`_validate_wizard_step`, linhas 198-206), uma regra equivalente e divergente. Como a Web não pode importar a regra de domínio sem mudar o escopo, deixo isso para a Frente B (P3). Quando a regra estiver única, o `wizard.py` passa a chamá-la.
-- `tests/test_postgres_integration.py` está desatualizado (P0, Felipe).
+- `tests/test_postgres_integration.py` está desatualizado (P0, Felipe); reescrito no baseline da branch `refactoring`.
 
 ## 8. Prompts utilizados
 

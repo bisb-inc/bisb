@@ -1,6 +1,6 @@
 # Refactoring — Auditoria de segurança
 
-Auditoria executada na branch `refactor/felipe-core`, sobre o código já desacoplado, conforme a seção 8 do plano de refactoring. Registra as verificações sem achado e o achado corrigido.
+Auditoria executada na branch `refactor/felipe-core`, sobre o código já desacoplado. Registra as verificações sem achado, o achado corrigido e a dívida de exposição documentada.
 
 ## Resumo
 
@@ -13,7 +13,8 @@ Auditoria executada na branch `refactor/felipe-core`, sobre o código já desaco
 | SQL | Sem SQL concatenado |
 | Templates e links | **1 achado corrigido:** links com esquema `javascript:` |
 | Dependências Python e npm | Nenhuma vulnerabilidade conhecida |
-| Docker | Sem segredos na imagem; usuário não-root; portas apenas em `127.0.0.1` |
+| Docker | Sem segredos na imagem; usuário não-root; Compose publica portas apenas em `127.0.0.1`; a imagem faz bind em `0.0.0.0` |
+| Requisições cross-site e validação de Host | **Dívida documentada**, herdada de `v1.0-mvp`: sem token CSRF, sem validação de `Origin`/`Referer` e sem validação de Host |
 | Tratamento de exceções | Mensagens controladas; sem stack trace na resposta |
 
 ## Verificações sem achado
@@ -30,8 +31,8 @@ Auditoria executada na branch `refactor/felipe-core`, sobre o código já desaco
 - **Dependências:**
   - `npm audit` → `found 0 vulnerabilities` (também com `--omit=dev`).
   - Python: `uvx pip-audit -r <export>` sobre as 49 dependências fixadas por `uv export --locked --all-groups --no-hashes --no-emit-project` → `No known vulnerabilities found` (pip-audit 2.10.1). Executado de forma efêmera, sem alterar `pyproject.toml` ou `uv.lock`.
-- **Docker:** imagem multi-stage; `uv sync --locked --no-dev`; processo como `appuser` (uid 10001); `.env` e `tests/` fora do contexto. O Compose publica app e banco apenas em `127.0.0.1`. Credenciais do banco vêm do `.env` local.
-- **Superfície das rotas:** não há autenticação nem sessão por decisão de escopo (ADR-001 e regras de negócio), portanto não há credenciais ambientes para CSRF explorar. `/docs` permanece exposto como parte do MVP.
+- **Docker:** imagem multi-stage; `uv sync --locked --no-dev`; processo como `appuser` (uid 10001); `.env` e `tests/` fora do contexto. O Compose publica app e banco apenas em `127.0.0.1`. Credenciais do banco vêm do `.env` local. O `CMD` do `Dockerfile` inicia o Uvicorn com `--host 0.0.0.0` (ver a dívida de exposição abaixo).
+- **Superfície das rotas:** não há autenticação nem sessão por decisão de escopo (ADR-001 e regras de negócio). `/docs` permanece exposto como parte do MVP.
 
 ## Achado corrigido — esquemas executáveis em links
 
@@ -41,6 +42,17 @@ Auditoria executada na branch `refactor/felipe-core`, sobre o código já desaco
 - **Comportamento preservado:** links `http(s)` e sites sem esquema (`alfa.example`) são emitidos exatamente como antes; nenhuma URL, rota, template novo ou classe CSS mudou. O CSS compilado permanece idêntico. Único efeito em entrada legítima rara: um site sem esquema com porta (`alfa.example:8080`) é interpretado pelo `urlsplit` como esquema `alfa.example` e passa a `#`; antes o navegador também o tratava como esquema desconhecido.
 - **Testes:** `tests/test_security_links.py` — 8 variações inseguras (`javascript:` com caixa mista, espaço inicial, tab, quebra de linha e caractere de controle; `data:`; `vbscript:`) e 3 casos de preservação. Sem a correção: 8 falhas e 3 aprovações; com a correção: 11 aprovações.
 - **Validação:** `pytest -q` → 176 passed, 1 skipped; teste PostgreSQL opt-in → 1 passed; `ruff check`, `ruff format --check` e `alembic check` sem apontamentos; `npm run build` com `app.css` e `htmx.min.js` idênticos aos versionados.
+
+## Dívida documentada — requisições cross-site e validação de Host
+
+Comportamento já presente em `v1.0-mvp`, mantido sem alteração nesta entrega.
+
+- **Situação:** as rotas que alteram estado (formulários da Web UI e REST API) não usam token CSRF; a aplicação não valida os cabeçalhos `Origin` ou `Referer`; não há validação explícita de Host (`TrustedHostMiddleware` ou equivalente).
+- **Exposição atual:** o Docker Compose publica a aplicação apenas em `127.0.0.1`, o que reduz a superfície de exposição à máquina local.
+- **Limite dessa mitigação:** a publicação em `127.0.0.1` não impede requisições cross-site originadas pelo navegador local. Uma página de outra origem aberta nesse navegador pode enviar formulários ou requisições simples à aplicação. A ausência de autenticação não elimina esse risco: a ação é executada com os privilégios de qualquer cliente, sem exigir credencial.
+- **DNS rebinding:** sem validação de Host, a aplicação responde a qualquer cabeçalho `Host`. Uma página servida por um domínio de terceiros que, depois de carregada, passe a resolver para `127.0.0.1` envia requisições à aplicação local na mesma origem dessa página e pode ler as respostas.
+- **Imagem Docker:** o `Dockerfile` faz bind em `0.0.0.0`. Publicar o container em todas as interfaces (por exemplo, `-p 8000:8000` ou `ports: "8000:8000"`) ampliaria a exposição para a rede.
+- **Conclusão:** a aplicação atual não deve ser tratada como pronta para exposição pública. A mitigação (token CSRF ou verificação de `Origin`, validação de Host) não faz parte desta entrega de refactoring, que preserva o comportamento externo.
 
 ## Fora do escopo desta auditoria
 

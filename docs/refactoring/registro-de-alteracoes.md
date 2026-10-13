@@ -39,7 +39,7 @@ Removido: o uso de `CollectionRequest` na rota collect (validação redundante; 
 - **Como era:** `routes.py` tinha pouca cobertura dos ramos não-HTMX de `collect_form`/`analyze_event_form`, dos 422 de filtros/período, do wizard (`back`, 404, JSON inválido) e nenhum snapshot de rotas.
 - **Como ficou:** 19 casos fixam o comportamento ATUAL: collect e analyze sem HX-Request → 303 (URLs esperadas); filtros inválidos da timeline → 422; período custom/preset inválido → 422; wizard back/404/400; `?tab=profile` → 303 e `?tab=monitoring` = timeline; `/ui/analyses/new?step=3` → 200; snapshot literal de (path, métodos) com o PUT incluído.
 - **Testes:** só o novo arquivo; PUT, `?tab=` e `?step=` são fixados como contratos de compatibilidade (ver T10).
-- **Verificação:** com DATABASE_URL de exemplo, `pytest` do arquivo novo: 19 passed; ruff check e ruff format --check limpos (a suíte completa inclui arquivos de outros agentes em paralelo).
+- **Verificação:** com DATABASE_URL de exemplo, `pytest` do arquivo novo: 19 passed; ruff check e ruff format --check limpos (a suíte completa foi executada nas tarefas seguintes).
 - **Técnica:** testes de caracterização (golden master); snapshot de rotas percorre `_IncludedRouter.original_router` recursivamente, então continua válido quando a Web for dividida em sub-routers (FastAPI recente não expõe as rotas em `app.routes` diretamente).
 
 ### T1 — Extrair lógica de períodos para módulo puro
@@ -87,7 +87,7 @@ Removido: o uso de `CollectionRequest` na rota collect (validação redundante; 
 **Como era**: tudo em legacy_routes.py: home/login_page/analyses_page (~L215-240), analysis_setup/update_analysis_setup/add_competitor_form/remove_competitor_form/update_company_form (~L340-430), analyze_event_form (~L570-620); usavam `_context`, Jinja2Templates local e `request.headers.get("HX-Request")`.
 **Como ficou**: três módulos, cada um com `router = APIRouter(tags=["Web UI"])`; usam `templates`/`is_htmx` de app.web.templating; contexto é dict simples sem "request"; update_company_form mantém POST e PUT. URLs, status, redirects, templates e mensagens idênticos; contratos de compatibilidade mantidos (T10). Ainda não incluídos (T9).
 **Testes**: n/a (suíte segue exercitando o legacy).
-**Verificação**: import dos módulos OK; script no scratchpad (cmp_t6.py) confirmou 10 rotas (path, métodos, nome) idênticas às do legacy; pytest 121 passed/1 skipped; ruff check e format --check limpos.
+**Verificação**: import dos módulos OK; comparação programática das 10 rotas (path, métodos, nome) com as do legacy, sem diferença; pytest 121 passed/1 skipped; ruff check e format --check limpos.
 **Técnica**: cópia literal + substituição mecânica (extract module, replace helper por is_htmx/contexto simples).
 
 ### T7 — Rotas do wizard em app/web/routes/wizard.py
@@ -95,15 +95,15 @@ Removido: o uso de `CollectionRequest` na rota collect (validação redundante; 
 **Como era**: `new_analysis_page`, `wizard_step`, `create_analysis_form`, `_render_wizard`, `_wizard_state`, `_sync_step_state`, `_validate_wizard_step`, `_parse_range`, `_context` em `legacy_routes.py` (≈l.137-225, 250-358).
 **Como ficou**: `router = APIRouter(tags=["Web UI"])` com as 3 rotas + `_render_wizard` (sem `_context`/"request" no contexto) + helper `_load_state_or_400` (ValueError de `wizard.load_state` -> HTTPException 400 com a mesma mensagem). Usa `wizard.new_state/sync_step/validate_step/apply_competitor_intent`, `period_or_422`, `overview_redirect_url`, `templates`/`is_htmx`. `collect_analysis` importado no nível do módulo. Parâmetro `step` mantido (ver T10).
 **Testes**: nenhum novo; suíte completa: 121 passed, 1 skipped.
-**Verificação**: ruff check/format OK; (path, métodos) idênticos aos do legacy; plugin pytest temporário no scratchpad (`swap_t7.py`) trocou as rotas do wizard do legacy pelas novas e rodou test_functional_mvp + test_web_characterization : 31 passed (rotas novas no lugar das antigas, mesma ordem).
+**Verificação**: ruff check/format OK; (path, métodos) idênticos aos do legacy; em uma aplicação de teste com as rotas do wizard do legacy substituídas pelas novas, na mesma ordem, test_functional_mvp + test_web_characterization: 31 passed.
 **Técnica**: extração de módulo por cópia fiel + delegação à lógica pura já extraída; tradução de exceção na borda HTTP.
 
 ### T8 — Rotas de workspace (routes/workspace.py)
 **Arquivos**: criado `app/web/routes/workspace.py` (nenhum outro editado; router ainda não incluído).
 **Como era**: `analysis_page`, `timeline_fragment`, `collect_form` em `legacy_routes.py` (~linhas 318-350, 441-465, 468-508) usando `_parse_timeline_filters`, `_parse_range`, `_load_events`, `_timeline_context`, `_overview_data`, `_context` (chave "request").
-**Como ficou**: mesmas 3 rotas em `APIRouter(tags=["Web UI"])`; usa `filters_or_422`/`period_or_422`, `workspace.timeline_context/overview_data/overview_redirect_url`, `analysis_events` inline, `templates`/`is_htmx`; `collect_analysis` importado no topo; `latest_received` via `latest_events=all_events`. Chaves de contexto, HX-Push-Url e redirect idênticos; `CollectionRequest` mantido.
+**Como ficou**: mesmas 3 rotas em `APIRouter(tags=["Web UI"])`; usa `filters_or_422`/`period_or_422`, `workspace.timeline_context/overview_data/overview_redirect_url`, `analysis_events` inline, `templates`/`is_htmx`; `collect_analysis` importado no topo; `latest_received` via `latest_events=all_events`. Chaves de contexto, HX-Push-Url e redirect idênticos; `CollectionRequest` ainda presente nesta etapa (o uso na rota collect foi removido na T10).
 **Testes**: nenhum novo; reaproveitados test_functional_mvp e test_web_characterization.
-**Verificação**: (path, métodos) do novo router ⊂ legacy; app temporário (plugin pytest no scratchpad substituindo as 3 rotas do legacy, mantendo a ordem) -> 31 testes de functional_mvp + characterization passam; suíte completa 121 passed/1 skipped; ruff check e format OK.
+**Verificação**: (path, métodos) do novo router ⊂ legacy; em uma aplicação de teste com as 3 rotas do legacy substituídas pelas novas, na mesma ordem, os 31 testes de functional_mvp + characterization passam; suíte completa 121 passed/1 skipped; ruff check e format OK.
 **Técnica**: extract module + replace inline helpers by pure functions; paridade provada por substituição de rotas em app temporário.
 
 ### T9 — Integração dos sub-routers (sessão principal)
@@ -127,7 +127,7 @@ Removido: o uso de `CollectionRequest` na rota collect (validação redundante; 
 - **Como era:** `routes.py` com 620 linhas (rotas, wizard, períodos, filtros e view-data misturados).
 - **Como ficou:** comparação função a função com `git show HEAD:backend/app/web/routes.py`. Status, mensagens, redirects, ordem de validação, chaves de contexto, HX-Push-Url e rollback/log da coleta inicial estão preservados. Na branch da Web, só mudavam as remoções deliberadas (PUT, `?tab=`, `?step=`, `CollectionRequest` na Web); na integração, PUT, `?tab=` e `?step=` foram restaurados como contratos de compatibilidade.
 - **Contexto de template:** a chave `request` saiu dos contextos. O único uso em template é `request.query_params` em `workspace/setup.html:7`, e o Starlette injeta `request` via `TemplateResponse(request=...)`. `url_for` também é coberto.
-- **Testes:** 121 passed, 1 skipped. Sem cobertura direta: HX-Push-Url exato do fragmento com filtros múltiplos, ramo 404 de `update_company_form` (empresa não vinculada) e `?step=abc` (422 preservado na integração e fixado por teste).
+- **Testes:** 121 passed, 1 skipped, na branch da Web. Sem cobertura direta nessa branch: HX-Push-Url exato do fragmento com filtros múltiplos, ramo 404 de `update_company_form` (empresa não vinculada) e `?step=abc`. Na branch integrada, os três são cobertos: `test_timeline_fragment_pushes_navigable_workspace_url` e `test_setup_actions_redirect_to_setup_sections` (baseline) e `test_new_analysis_non_integer_step_returns_422`.
 - **Verificação:** `pytest -q`, `ruff check` e `ruff format --check` passam. Templates e services sem alteração (`git status`).
 - **Técnica:** leitura diff a diff, grep de dependências (`request`, `hx-put`, `tab=`, `routes.py`) e execução da suíte.
 - **Achados menores:** `errors.py` é um adaptador fino, aceitável. `_load_state_or_400` fica em `routes/wizard.py`, enquanto os outros adaptadores 422 ficam em `errors.py`. As rotas `add_competitor_form` e `update_company_form` mantêm `request` sem uso, como no original.
@@ -135,37 +135,35 @@ Removido: o uso de `CollectionRequest` na rota collect (validação redundante; 
 ### Achados menores da revisão (não corrigidos)
 - `_load_state_or_400` (`routes/wizard.py`) repete o padrão de `errors.py`, mas ficou local.
 - `analysis_events(...)` é chamado em 2 pontos de `routes/workspace.py` (duplicação pequena).
-- Riscos sem teste direto: 404 de `update_company_form` para empresa não vinculada; `HX-Push-Url` da timeline com vários filtros.
+- O 404 de `update_company_form` para empresa não vinculada e o `HX-Push-Url` da timeline com vários filtros não tinham teste na branch da Web; na branch integrada, são cobertos pelos testes de caracterização do baseline (ver T11).
 
 ---
 
 ## Frente B — Core / Services / Segurança (Felipe)
 
-> Espaço reservado. Usar o mesmo formato por tarefa (Arquivos, Como era, Como ficou, Testes, Verificação, Técnica).
-
 ### Resumo
-_(a preencher)_
+A frente Core partiu do baseline da branch `refactoring`: testes de caracterização da REST API, da Web UI e da coleta, e o teste PostgreSQL opt-in reescrito para o fluxo do wizard ([00-baseline.md](00-baseline.md)). Sobre esse baseline, a branch `refactor/felipe-core` aplicou quatro intervenções, cada uma em commit próprio e validada pela suíte completa ([01-core-services.md](01-core-services.md)):
 
-### Métricas
-| Métrica | Antes | Depois |
+- **Erros de aplicação:** `NotFoundError`, `ConflictError` e `BusinessRuleError` sob `ApplicationError`, traduzidos para 404, 409 e 422 por handlers globais em `app/http_errors.py`, registrados em `create_app()`. Os serviços deixaram de depender de FastAPI, com os mesmos status e corpos de erro.
+- **Coleta:** `collect_analysis()` passou a só orquestrar (Extract Method). A transação por par empresa/provider e as mensagens foram preservadas, e mutações manuais confirmaram a cobertura do `rollback` e do `commit`.
+- **Identidade por website:** a busca de empresa por site normalizado em `companies.py` foi unificada (DRY). A regra divergente do wizard foi mantida, porque unificá-la mudaria o comportamento observável.
+- **Segurança:** auditoria de segredos, `.env`, `SecretStr`, logs, providers, SQL, templates, dependências, Docker e exceções. Houve um achado corrigido, o filtro `safe_href` contra esquemas executáveis em links, e uma dívida documentada sobre requisições cross-site e validação de Host ([02-security-audit.md](02-security-audit.md)).
+
+### Métricas finais
+| Métrica | Baseline | Depois |
 |---|---:|---:|
-| Services importando `HTTPException` | 5 | _ |
-| Teste PostgreSQL compatível com o wizard | não | _ |
-| Suíte | _ | _ |
+| Módulos de `app/services/` que importam FastAPI | 5 | 0 |
+| `raise HTTPException` em `app/services/` | 15 | 0 |
+| Complexidade ciclomática de `collect_analysis` | 11 | 3 |
+| Implementações da busca de empresa por website em `companies.py` | 2 | 1 |
 
-### Tarefas
-- _Fase 0 — baseline e teste PostgreSQL_
-- _7.1 Desacoplar services de FastAPI_
-- _7.2 Simplificar `collect_analysis()`_
-- _7.3 DRY / identidade por website_
-- _Auditoria de segurança_
+Os comandos de medição estão em [00-baseline.md](00-baseline.md#métricas-de-referência), e os resultados por intervenção em [01-core-services.md](01-core-services.md).
 
-### Pontos de partida (levantados na Frente A, ainda não verificados pela Frente B)
-- `services/collection.py`: o default `providers=None` (fallback para mocks) não é usado por nenhum chamador; `HTTPException` é importado dentro da função.
-- `services/event_analysis.py`: `__all__` re-exporta `AnalysisProviderError`, e os testes importam de `app.providers.analysis`.
-- `providers/__init__.py`: `__all__` re-exporta os providers; os mocks só têm uso real em `collection.py` (ver item 1) e em testes.
-- `app/web/wizard.py` compara websites com `rstrip("/")` + `lower()/casefold()`, regra divergente de `normalize_website` em `services/companies.py` (P3).
-- Ao trocar `HTTPException` por erros de domínio, a tradução na Web fica em poucos pontos: `routes/wizard.py` (`create_analysis`), `routes/setup.py` e `routes/workspace.py`.
+### Pontos levantados pela Frente A
+- `services/collection.py`, default `providers=None`: mantido, pois é usado pelos testes de caracterização da coleta; o import interno de FastAPI foi removido.
+- `__all__` de `services/event_analysis.py` e `providers/__init__.py`: mantidos, pois não afetam o comportamento.
+- Regra de site do wizard × `normalize_website`: divergência confirmada e mantida como dívida ([01-core-services.md](01-core-services.md#4-identidade-de-empresa-por-site)).
+- Tradução de erros na Web: concentrada nos handlers globais; a única captura explícita é a de `create_analysis_form`, que exibe `ApplicationError.message` na etapa de revisão do wizard.
 
 ---
 
@@ -186,15 +184,17 @@ Branch `refactor/integration`: `refactor/felipe-core` com merge de `review/luca-
 | `ruff check .` / `ruff format --check .` | limpo |
 | `alembic check` | sem novas operações |
 | `npm run build` | concluído; CSS gerado idêntico ao versionado |
-| OpenAPI `v1.0-mvp` × integrado | idêntico |
+| OpenAPI completo `v1.0-mvp` × integrado — evidência auxiliar não reproduzível a partir do repositório (comparação por script não versionado) | idêntico |
 | Rotas REST (caminho/método) | 13, idênticas |
 | Rotas Web | 16 combinações caminho/método em 13 caminhos distintos, idênticas a `v1.0-mvp` |
-| Golden master da Web UI (117 requisições, HTML normalizado) | idêntico a `v1.0-mvp` e a `refactor/felipe-core`; a branch da Frente A isolada diverge em 6 (`?step=3`, `?step=9`, `?tab=profile`, `?tab=monitoring`, PUT e a página de Setup seguinte ao PUT) |
+| Golden master da Web UI (117 requisições, HTML normalizado) — **evidência auxiliar não reproduzível a partir do repositório** (o executor não foi versionado) | idêntico a `v1.0-mvp` e a `refactor/felipe-core`; a branch da Frente A isolada diverge em 6 (`?step=3`, `?step=9`, `?tab=profile`, `?tab=monitoring`, PUT e a página de Setup seguinte ao PUT) |
 | Contratos pontuais | PUT = POST (303 para `setup?saved=1#companies`); `?tab=profile` → 303 para `/setup`; `?tab=monitoring` → Timeline; `?tab=monitoring&view=companies` → Empresas; `?step=3` → etapa 3; `?step=abc` → 422 |
 | Mutação: `safe_href` devolvendo a URL sem filtrar | 8 testes de `test_security_links.py` falham |
 | Mutação: captura de `HTTPException` no lugar de `ApplicationError` | 2 testes de `test_characterization_core.py` falham |
 | `app/services/` importando FastAPI | 0 |
 
-### Pendentes
-- Auditoria de dependências, smoke test manual da UI e revisão independente da branch integrada.
-- Seção da Frente B neste registro: o detalhamento está em [00-baseline.md](00-baseline.md), [01-core-services.md](01-core-services.md) e [02-security-audit.md](02-security-audit.md).
+O inventário de rotas REST (pelo OpenAPI) e Web e os contratos pontuais são reproduzíveis pelos testes versionados (`test_rest_contract_inventory_is_preserved`, `test_web_routes_snapshot`, `test_web_url_is_still_served` e os testes de contratos de compatibilidade em `test_web_characterization.py`). As mutações foram aplicadas manualmente e revertidas.
+
+A auditoria de dependências (`npm audit` e `pip-audit`) foi executada na frente Core e está registrada em [02-security-audit.md](02-security-audit.md); `uv.lock`, `pyproject.toml`, `package.json` e `package-lock.json` não mudaram desde então.
+
+Não houve smoke test manual da UI na branch integrada; wizard, coleta, Timeline, Setup, análise de evento e respostas HTMX são exercitados pelos testes HTTP.
