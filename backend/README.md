@@ -151,14 +151,13 @@ uv run --locked alembic upgrade head
 uv run --locked pytest -q tests/test_postgres_integration.py
 ```
 
-O teste opt-in percorre persistência, Web UI, coleta e assets, mas ainda envia o formulário anterior ao wizard; precisa ser adaptado antes de validar o fluxo atual (ver abaixo). Não execute contra um banco com dados de usuário.
+O teste opt-in percorre o wizard, a criação com coleta inicial, o Setup, uma nova coleta com deduplicação, a timeline com filtro HTMX, a análise de evento com provider mockado e os assets, e remove os registros que cria. Não execute contra um banco com dados de usuário.
 
 ## Limitações conhecidas
 
-- **Contagens após a coleta HTMX:** a resposta da coleta calcula o contador, os destaques e a distribuição por empresa a partir de todos os eventos da análise, enquanto a URL enviada em `HX-Push-Url` contém o intervalo coletado. Ao recarregar essa URL, o filtro de período é aplicado e as contagens podem mudar. Ver [Web Routes](app/web/routes.py).
-- **Teste PostgreSQL opt-in:** o [teste](tests/test_postgres_integration.py) envia `name`, `target_name` e `target_website` diretamente para `/ui/analyses`, mas a rota atual espera `wizard_state`. O teste também contém expectativas da interface anterior.
+- **Contagens após a coleta HTMX:** a resposta da coleta calcula o contador, os destaques e a distribuição por empresa a partir de todos os eventos da análise, enquanto a URL enviada em `HX-Push-Url` contém o intervalo coletado. Ao recarregar essa URL, o filtro de período é aplicado e as contagens podem mudar. Ver [Web Routes](app/web/routes/).
 
-Esses pontos são limitações concretas da implementação e da validação atuais, não funcionalidades futuras nem decisões arquiteturais pendentes. X real, paginação e coordenação de coletas concorrentes permanecem fora da implementação.
+Esse ponto é uma limitação concreta da implementação atual, não uma funcionalidade futura nem uma decisão arquitetural pendente. X real, paginação e coordenação de coletas concorrentes permanecem fora da implementação.
 
 ## Encerrar
 

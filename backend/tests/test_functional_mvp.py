@@ -254,7 +254,7 @@ def test_wizard_can_remove_competitor_without_losing_target(functional_client):
 
 
 def test_failed_initial_collection_keeps_new_analysis(functional_client, monkeypatch):
-    from app.web import routes
+    from app.web.routes import wizard as routes
 
     def fail_collection(*args, **kwargs):
         raise RuntimeError("provider failure")

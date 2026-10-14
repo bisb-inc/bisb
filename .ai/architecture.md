@@ -58,7 +58,8 @@ Monólito modular FastAPI. Web UI e REST API são duas interfaces para os mesmos
 
 | Componente | Local | Responsabilidade |
 | --- | --- | --- |
-| Web Routes | `app/web/routes.py` | Navegação, formulários e HTMX; retornam páginas ou fragmentos Jinja2 |
+| Web Routes | `app/web/router.py`, `app/web/routes/` (`pages`, `wizard`, `workspace`, `setup`, `event_analysis`) | Camada HTTP: navegação, formulários e HTMX; retornam páginas ou fragmentos Jinja2. `router.py` compõe os sub-routers |
+| Lógica da Web | `app/web/templating.py`, `periods.py`, `wizard.py`, `workspace.py` | `Jinja2Templates`, filtro `safe_href` e `is_htmx`; lógica pura de períodos, wizard e workspace |
 | Templates | `app/web/templates/` (`workspace/`, `partials/`) | Apresentação; sem regra de negócio nem acesso ao banco |
 | REST API Routes | `app/api/routes/` | Contratos REST oficiais e da extensão de análise |
 | Application / Services | `app/services/` | Análises, empresas, coleta, eventos e análise de eventos |
@@ -110,4 +111,4 @@ X real, autenticação/autorização, agendamento, workers, filas, alertas, craw
 
 ## Limitações conhecidas
 
-As limitações da implementação atual estão registradas em [backend/README.md](../backend/README.md#limitações-conhecidas): as contagens da resposta HTMX da coleta e o teste PostgreSQL opt-in desatualizado. Não são decisões arquiteturais pendentes.
+A limitação conhecida da implementação atual está registrada em [backend/README.md](../backend/README.md#limitações-conhecidas): as contagens da resposta HTMX da coleta. Não é uma decisão arquitetural pendente.

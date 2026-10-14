@@ -4,6 +4,14 @@ Bisb é o nome do sistema/produto. Competitive Monitor é o módulo implementado
 
 O **Competitive Monitor** é um MVP de monitoramento competitivo para acompanhar uma empresa-alvo e seus concorrentes em uma timeline única de notícias e publicações do X/Twitter.
 
+## Entrega 2 — Refatoração de Arquitetura
+
+A branch `refactoring` contém a modernização arquitetural da Entrega 1 (tag `v1.0-mvp`), sem novas funcionalidades.
+
+- **Relatório de modernização:** [docs/modernization-report.md](docs/modernization-report.md)
+- **Evidências por etapa** (baseline, Core/Services, segurança e Web Layer): [docs/refactoring/](docs/refactoring/)
+- **Prompts utilizados**, numerados na ordem de execução: [prompts/refactoring/](prompts/refactoring/)
+
 ## Problema e hipótese
 
 Acompanhar concorrentes exige consultar várias fontes e comparar acontecimentos dispersos. O projeto testa a hipótese de que, dada uma empresa-alvo e uma lista de concorrentes definida pelo analista, é possível coletar acontecimentos de fontes diferentes, normalizá-los, persistir os resultados e apresentá-los em uma timeline comparativa.
@@ -233,7 +241,7 @@ uv run --locked alembic check
 npm run build
 ```
 
-Os testes padrão usam SQLite temporário e clientes/providers externos mockados. Por isso, não comprovam integração real com PostgreSQL, GNews ou Gemini. O teste PostgreSQL opt-in precisa ser atualizado para o wizard antes de servir como evidência do fluxo atual. As limitações conhecidas estão no [README do backend](backend/README.md#limitações-conhecidas).
+Os testes padrão usam SQLite temporário e clientes/providers externos mockados. Por isso, não comprovam integração real com PostgreSQL, GNews ou Gemini. O teste PostgreSQL opt-in percorre o fluxo atual do wizard em uma base dedicada. As limitações conhecidas estão no [README do backend](backend/README.md#limitações-conhecidas).
 
 ## Entregáveis da disciplina
 
@@ -248,7 +256,6 @@ Os testes padrão usam SQLite temporário e clientes/providers externos mockados
 
 - Definir o cenário final e gravar o vídeo de demonstração de 3 a 10 minutos.
 - Confirmar o acesso/visibilidade do repositório exigido para a entrega.
-- Atualizar e executar o teste PostgreSQL opt-in para o fluxo do wizard.
 - Corrigir as limitações conhecidas registradas no [README do backend](backend/README.md#limitações-conhecidas), se o grupo decidir tratá-las antes da entrega.
 
 A integração real com o X é uma evolução opcional não implementada e não bloqueia o MVP: os providers mockados permitem executar localmente e demonstrar o fluxo completo sem credenciais externas.

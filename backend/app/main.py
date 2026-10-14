@@ -9,9 +9,10 @@ from sqlalchemy.orm import sessionmaker
 from app.api.router import router
 from app.core.config import Settings
 from app.db.session import build_engine
+from app.http_errors import register_error_handlers
 from app.providers import configured_providers
 from app.providers.analysis import configured_analysis_provider
-from app.web.routes import router as web_router
+from app.web.router import router as web_router
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
@@ -36,6 +37,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     application.state.analysis_provider = configured_analysis_provider(settings)
     static_dir = Path(__file__).resolve().parent / "static"
     application.mount("/static", StaticFiles(directory=static_dir), name="static")
+    register_error_handlers(application)
     application.include_router(router)
     application.include_router(web_router)
     return application

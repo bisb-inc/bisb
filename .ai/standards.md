@@ -22,6 +22,7 @@ Diferencie sempre **MVP base**, **extensões já implementadas** e **roadmap fut
 ## Diretrizes de implementação
 
 - Rotas cuidam da interface HTTP; regras de negócio coordenam operações; persistência mantém os dados; providers isolam fontes externas.
+- Serviços não dependem de FastAPI. Falhas esperadas usam os erros de `app/services/errors.py` (`NotFoundError`, `ConflictError`, `BusinessRuleError`), traduzidos para 404, 409 e 422 em `app/http_errors.py`, com o corpo `{"detail": ...}`.
 - Adicionar serviços, modelos e providers quando houver comportamento concreto, sem camadas vazias ou substituição desnecessária da base existente.
 - Providers reais e mockados devem atender à mesma abstração e retornar dados normalizados para o domínio. Não propagar contratos externos pelas regras de negócio.
 - Identificar eventos simulados por `is_mock`, inclusive na apresentação. Garantir demonstração local com mocks compatíveis quando integrações reais forem inviáveis.
@@ -39,7 +40,12 @@ Estrutura atual em `backend/`:
 app/
 ├── api/routes/          # REST API (analyses, event_analyses, health)
 ├── web/
-│   ├── routes.py        # Web Routes: lista, wizard, workspace, Setup, coleta, análise de evento
+│   ├── router.py        # compõe os sub-routers de routes/
+│   ├── templating.py    # Jinja2Templates, filtro safe_href e is_htmx
+│   ├── periods.py       # lógica pura da Web: períodos
+│   ├── wizard.py        # lógica pura da Web: estado do wizard
+│   ├── workspace.py     # lógica pura da Web: workspace
+│   ├── routes/          # Web Routes (camada HTTP): pages, wizard, workspace, setup, event_analysis
 │   └── templates/       # base, analyses, wizard, analysis (Timeline)
 │       ├── workspace/   # overview, companies, setup
 │       └── partials/    # fragmentos HTMX reutilizados
@@ -107,7 +113,7 @@ Usar HTMX para interações localizadas, como executar coleta, atualizar timelin
 - Tratar `GEMINI_API_KEY` como segredo: nunca registrar, retornar, persistir ou incluir em imagem. Não incluir chaves em prompts enviados ao modelo.
 - Cobrir providers Gemini por cliente mockado; a suíte padrão não deve fazer chamadas externas. Validar API, Web Route HTMX, migração e preservação do evento/resultado anterior em falhas.
 
-A suíte em [backend/tests](../backend/tests) cobre configuração, health, OpenAPI, regras de negócio, providers (incluindo GNews e Gemini com clientes mockados), rotas Web/REST, wizard, fragmentos HTMX e fluxo completo com SQLite isolado. O teste PostgreSQL separado é opt-in, requer uma base dedicada e ainda usa o formulário anterior ao wizard; precisa ser atualizado antes de servir como evidência do fluxo atual.
+A suíte em [backend/tests](../backend/tests) cobre configuração, health, OpenAPI, regras de negócio, providers (incluindo GNews e Gemini com clientes mockados), rotas Web/REST, wizard, fragmentos HTMX e fluxo completo com SQLite isolado. O teste PostgreSQL separado é opt-in, requer uma base dedicada e percorre o fluxo atual do wizard até a timeline e a análise de evento. Os testes de caracterização (`test_characterization_core.py` e `test_characterization_web.py`) fixam contratos de erro, semântica da coleta, URLs e respostas HTMX.
 
 Validar o fluxo de análise até a timeline, TARGET único, concorrentes adicionados depois, perfil opcional, fallback de busca, identificação de mocks, deduplicação, filtros, falha parcial e preservação dos eventos. Tratar estados vazios, carregamento e erro na interface conforme a arquitetura.
 

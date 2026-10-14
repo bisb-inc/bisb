@@ -10,9 +10,9 @@
               <span class="text-line" aria-hidden="true">·</span><span class="text-muted">{{ event.source.value }}</span>
               {% if event.is_mock %}<span class="mock-badge">Demonstração · mock</span>{% endif %}
             </div>
-            <h3 id="event-title-{{ event.id }}" class="mt-2 text-base font-semibold leading-6"><a href="{{ event.url }}" {% if not event.is_mock %}target="_blank" rel="noopener noreferrer"{% else %}aria-label="{{ event.title }} (evento simulado)"{% endif %} class="focus-ring rounded-sm hover:text-accent">{{ event.title }}</a></h3>
+            <h3 id="event-title-{{ event.id }}" class="mt-2 text-base font-semibold leading-6"><a href="{{ event.url|safe_href }}" {% if not event.is_mock %}target="_blank" rel="noopener noreferrer"{% else %}aria-label="{{ event.title }} (evento simulado)"{% endif %} class="focus-ring rounded-sm hover:text-accent">{{ event.title }}</a></h3>
             {% if event.description %}<p class="mt-1 max-w-3xl whitespace-pre-line text-sm leading-6 text-muted">{{ event.description }}</p>{% endif %}
-            {% if not event.is_mock %}<a href="{{ event.url }}" target="_blank" rel="noopener noreferrer" class="mt-2 inline-block text-xs font-medium text-accent hover:underline">Abrir fonte ↗</a>{% else %}<span class="mt-2 inline-block text-xs text-muted">Fonte simulada para demonstração</span>{% endif %}
+            {% if not event.is_mock %}<a href="{{ event.url|safe_href }}" target="_blank" rel="noopener noreferrer" class="mt-2 inline-block text-xs font-medium text-accent hover:underline">Abrir fonte ↗</a>{% else %}<span class="mt-2 inline-block text-xs text-muted">Fonte simulada para demonstração</span>{% endif %}
             {% set event_analysis = event.event_analysis %}{% set error = none %}{% include "partials/event_analysis.html" %}
           </article>
         </li>
