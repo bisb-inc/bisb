@@ -111,7 +111,7 @@ Convenção: `web/<x>.py` contém lógica pura da área e `web/routes/<x>.py` co
 5. **Criar `templating.py`, `routes/*` e `router.py`**. `main.py` passa a importar `app.web.router`. Atualizar o `monkeypatch` do teste para `app.web.routes.wizard`. Remover `routes.py`.
 6. **Tratar os itens de 3.1** em um commit separado, para facilitar o revert. Estado final: remoção do uso de `CollectionRequest` na rota collect; PUT, `?tab=` e `?step=` preservados como contratos de compatibilidade (decisão na integração).
 7. **Docs:** atualizar `.ai/standards.md` (árvore da seção "Organização da Web UI"), `.ai/architecture.md` (linha "Web Routes" e a nota sobre `?tab=`) e `docs/arquitetura.md`.
-8. **Evidências:** métricas depois e o prompt da frente em `prompts/refactoring/03-web-layer-refactoring.md`. A seção do relatório sobre a Web Layer vem no fim.
+8. **Evidências:** métricas depois e o prompt da frente em `prompts/refactoring/02-web-layer-refactoring.md`. A seção do relatório sobre a Web Layer vem no fim.
 
 ### Verificação (a cada passo e no final)
 ```bash
@@ -168,7 +168,7 @@ Contratos fixados antes de paralelizar (evitam divergência entre sub-tarefas):
 | 3 | **T8** `routes/workspace.py` | `web/routes/workspace.py` | **Paralelo** |
 | 4 | **T9** Integração: `router.py` inclui os sub-routers, remove `routes.py`, compara snapshot de rotas | `web/` | Sequencial |
 | 5 | **T10** Itens de 3.1 + testes novos/alterados (5.1) | `web/routes/*`, `tests/` | Sequencial, commit separado |
-| 6 | **T11** Revisão independente + métricas "depois" + `prompts/refactoring/03-web-layer-refactoring.md` | `prompts/`, relatório | Paralelo entre si |
+| 6 | **T11** Revisão independente + métricas "depois" + `prompts/refactoring/02-web-layer-refactoring.md` | `prompts/`, relatório | Paralelo entre si |
 
 Regras de cada sub-tarefa: editar só os arquivos da sua linha; rodar `pytest -q`, `ruff check .` e `ruff format --check .`; não tocar em `services/`, `models.py`, `migrations/`; sem features novas. A integração dos sub-routers (T9) e a T10 são sequenciais.
 
@@ -217,4 +217,4 @@ Dívidas e código sem uso fora de `app/web/`, só registradas:
 
 ## 8. Prompts utilizados
 
-Registrados em [prompts/refactoring/03-web-layer-refactoring.md](../../prompts/refactoring/03-web-layer-refactoring.md).
+Registrados em [prompts/refactoring/02-web-layer-refactoring.md](../../prompts/refactoring/02-web-layer-refactoring.md).

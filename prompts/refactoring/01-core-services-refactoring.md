@@ -1,4 +1,4 @@
-# Prompt — Execução do refactoring Core/Services
+# Prompt 01 — Execução do refactoring Core/Services
 
 Prompt do usuário enviado ao Claude Code, transcrito literalmente do texto colado na sessão (2026-10-10). Trechos omitidos estão marcados entre colchetes; o restante não foi editado. Execução registrada em [00-baseline.md](../../docs/refactoring/00-baseline.md), [01-core-services.md](../../docs/refactoring/01-core-services.md) e [02-security-audit.md](../../docs/refactoring/02-security-audit.md).
 

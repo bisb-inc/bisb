@@ -1,4 +1,4 @@
-# Prompt 03 — Refatoração da Web Layer (Frente A, Luca)
+# Prompt 02 — Refatoração da Web Layer (Frente A, Luca)
 
 Prompts do usuário usados nesta frente, transcritos como foram enviados. Não foram editados depois da execução.
 

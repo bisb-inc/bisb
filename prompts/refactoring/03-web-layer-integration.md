@@ -1,4 +1,4 @@
-# Prompt — Integração da Web Layer com a frente Core/Services
+# Prompt 03 — Integração da Web Layer com a frente Core/Services
 
 Prompt do usuário enviado ao Claude Code, transcrito literalmente do texto colado na sessão (2026-10-13). Trechos omitidos estão marcados entre colchetes; o restante não foi editado. Resultado registrado na seção "Integração e validação final" de [registro-de-alteracoes.md](../../docs/refactoring/registro-de-alteracoes.md#integração-e-validação-final).
 

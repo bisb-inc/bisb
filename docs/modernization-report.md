@@ -197,6 +197,8 @@ Nessa etapa não houve refactoring estrutural da aplicação.
 | Web Layer concentrada em único módulo | confirmado |
 | Divergência entre regra de website do wizard e serviço | confirmada e preservada como dívida |
 
+A Entrega 1 foi implementada com agente de IA a partir dos prompts versionados em `prompts/` (em especial `implementation.md`), e 7 dos 20 commits de `v1.0-mvp` são co-autorados pelo Claude. Por isso, essas dívidas incluem dívidas geradas pela própria IA: atalhos que funcionam mas acoplam camadas (`HTTPException` nos Services), um único módulo que cresceu a cada prompt (`routes.py` com 620 linhas), lógica repetida em vez de reutilizada (busca por website), teste que ficou para trás quando o fluxo mudou (PostgreSQL × wizard) e links renderizados sem validar o esquema da URL (XSS, seção 8.1). A Entrega 2 trata exatamente essas dívidas.
+
 Mudanças arquiteturais maiores, como Repository Pattern genérico ou hierarquias extensas de exceções, foram avaliadas e rejeitadas por não apresentarem benefício proporcional ao tamanho do MVP.
 
 ---
@@ -694,12 +696,12 @@ A utilização de contexto independente na revisão buscou reduzir o risco de **
 
 ### 12.1 Prompts versionados
 
-Os prompts recuperados e versionados em `prompts/refactoring/` incluem:
+Os prompts recuperados e versionados em `prompts/refactoring/`, numerados na ordem de execução, são:
 
-- `03-web-layer-refactoring.md`;
-- `core-services-refactoring.md`;
-- `web-layer-integration.md`;
-- `final-documentation-hygiene.md`.
+- `01-core-services-refactoring.md`: blindagem e frente Core/Services/Segurança;
+- `02-web-layer-refactoring.md`: frente Web Layer;
+- `03-web-layer-integration.md`: integração das duas frentes;
+- `04-final-documentation-hygiene.md`: higienização final da documentação.
 
 Nos arquivos recuperados posteriormente, trechos estritamente operacionais que não pertencem ao conteúdo técnico da entrega foram omitidos e **marcados explicitamente entre colchetes**.
 

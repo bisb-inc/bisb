@@ -1,6 +1,6 @@
 # Registro de alterações — Refatoração (Entrega 2)
 
-Registro curto, por tarefa, do que foi alterado: como era e como ficou. Plano de origem: [web-layer-plan.md](web-layer-plan.md). Prompt: [03-web-layer-refactoring.md](../../prompts/refactoring/03-web-layer-refactoring.md).
+Registro curto, por tarefa, do que foi alterado: como era e como ficou. Plano de origem: [web-layer-plan.md](web-layer-plan.md). Prompt: [02-web-layer-refactoring.md](../../prompts/refactoring/02-web-layer-refactoring.md).
 
 ---
 

@@ -1,4 +1,4 @@
-# Prompt — Higienização final da documentação de evidências
+# Prompt 04 — Higienização final da documentação de evidências
 
 Prompt do usuário enviado ao Claude Code, transcrito literalmente do texto colado na sessão (2026-10-13). Trechos omitidos estão marcados entre colchetes; o restante não foi editado. Aplicado após a revisão técnica da branch `refactor/integration`.
 
