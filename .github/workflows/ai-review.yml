@@ -1,0 +1,44 @@
+name: AI Code Review
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: AI Reviewer
+        uses: anc95/ChatGPT-CodeReview@v1.0.24
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OPENAI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          OPENAI_API_ENDPOINT: https://generativelanguage.googleapis.com/v1beta/openai/
+          LANGUAGE: Portuguese
+          MODEL: gemini-flash-lite-latest
+          max_tokens: 10000
+          PROMPT: |
+            Aja como um Engenheiro de Segurança Sênior (DevSecOps).
+            O projeto é um monólito modular em Python 3.14 com FastAPI, SQLAlchemy 2 síncrono,
+            psycopg (PostgreSQL 16), Alembic, Pydantic Settings, Jinja2 e HTMX.
+            Padrões do repositório:
+            - Rotas cuidam da interface HTTP; regras de negócio ficam em app/services, sem dependência de FastAPI.
+            - Falhas esperadas usam NotFoundError, ConflictError e BusinessRuleError (app/services/errors.py).
+            - Segredos nunca aparecem em código, logs, mensagens de erro ou URLs.
+            - Ruff com linhas de até 100 caracteres e regras E, F, I, UP, B.
+            Analise o diff deste Pull Request buscando:
+            1. Vulnerabilidades OWASP Top 10, especialmente SQL Injection e Insecure Deserialization.
+            2. Code smells e complexidade ciclomática desnecessária.
+            3. Desvios dos padrões do repositório e das boas práticas de FastAPI e SQLAlchemy 2.
+            4. Comente diretamente nas linhas afetadas, com explicações técnicas, construtivas e sugestões de correção.
+            Classifique cada apontamento como 🔴 crítico, 🟡 atenção ou ⚪ sugestão.
