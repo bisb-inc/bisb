@@ -92,9 +92,10 @@ def list_events(
     source: EventSource | None = None,
     from_date: Annotated[date | None, Query(alias="from")] = None,
     to_date: Annotated[date | None, Query(alias="to")] = None,
+    q: str | None = None,
 ):
     return analysis_events(
-        session, analysis_id, company, source.value if source else None, from_date, to_date
+        session, analysis_id, company, source.value if source else None, from_date, to_date, q
     )
 
 

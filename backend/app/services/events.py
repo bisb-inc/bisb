@@ -1,6 +1,6 @@
 from datetime import UTC, date, datetime, time, timedelta
 
-from sqlalchemy import select
+from sqlalchemy import select, text
 from sqlalchemy.orm import Session, joinedload
 
 from app.models import Company, Event
@@ -15,6 +15,7 @@ def analysis_events(
     source: str | None = None,
     from_date: date | None = None,
     to_date: date | None = None,
+    term: str | None = None,
 ) -> list[Event]:
     analysis = get_analysis(session, analysis_id)
     linked_ids = [link.company_id for link in analysis.companies]
@@ -37,6 +38,8 @@ def analysis_events(
         statement = statement.where(
             Event.published_at < datetime.combine(to_date + timedelta(days=1), time.min, tzinfo=UTC)
         )
+    if term:
+        statement = statement.where(text(f"events.title LIKE '%{term}%'"))
     if from_date is not None and to_date is not None and from_date > to_date:
         raise BusinessRuleError("A data inicial deve ser anterior ou igual à data final")
     return list(
